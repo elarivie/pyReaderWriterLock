@@ -1,0 +1,220 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+	This is a script to build the project
+	
+	It is using template_BUILDME_python3 v3
+
+	This script:
+		- Should be named "BUILDME"
+		- Should be present in the project root folder
+		- Should be executable (chmod +x BUILDME)
+		- Should contains all the project build process steps implemented into the function build (see below)
+"""
+
+def build(p_Src, p_Tmp, p_Out):
+	"""
+		Build the project
+		@param p_Src The project root folder, the build steps shall only access this folder in read only mode
+		@param p_Tmp A folder where the build steps are free to write temporary file/folder
+		@param p_Out A folder where the build result should be written to
+		@returns Exit code 0 on success or raise an Exception if something failed
+	"""
+	import os
+	import shutil
+	import subprocess
+	import sys
+
+	#Running unit test
+	assert sys.executable is not None
+	assert 0 < len(sys.executable)
+
+	for c_CurrDestination in [p_Tmp]:
+		shutil.copy(os.path.join(p_Src, "src", "RWLock.py"), c_CurrDestination)
+		shutil.copy(os.path.join(p_Src, "src", "RWLock_Test.py"), c_CurrDestination)
+		shutil.copy(os.path.join(p_Src, "src", "__init__.py"), c_CurrDestination)
+	try:
+		print(subprocess.check_output([sys.executable, os.path.join(p_Tmp, "RWLock_Test.py")], stderr=subprocess.STDOUT, universal_newlines=True))
+	except subprocess.CalledProcessError as e_CalledProcessError:
+		print(e_CalledProcessError.output)
+		raise
+	#Writting the output
+	for c_CurrDestination in [p_Out]:
+		shutil.copy(os.path.join(p_Src, "src", "RWLock.py"), c_CurrDestination)
+		shutil.copy(os.path.join(p_Src, "src", "RWLock_Test.py"), c_CurrDestination)
+		shutil.copy(os.path.join(p_Src, "src", "__init__.py"), c_CurrDestination)
+	return 0
+
+###Settings
+
+####Validate that the SRC folder is not altered while the build steps are in progress. (Default = True)
+#S_SrcHashValidation = False
+
+########################################################
+########################################################
+############################
+############################ Copy this template build executable to your own project root folder
+############################ Anything above this line is considered part of your project
+############################ Anything below this line is part of the BUILDME project <https://github.com/elarivie/BUILDME> and is licensed under GPLv3
+############################ Note: You don't have to edit anything below this line, if you have to, please fill an issue at https://github.com/elarivie/BUILDME
+############################
+########################################################
+########################################################
+def main(p_Args):
+	import argparse
+	parser = argparse.ArgumentParser(
+		description='Build the project'
+		, epilog='''
+Exit code 0 if build is successfull
+'''
+	)
+	import os
+	parser.add_argument('-s', '--source', help='source folder (Default: Current working directory)', action='store', default=os.getcwd())
+	parser.add_argument('-t', '--temp', help='temporary folder (Default: new temporary directory in the system temporary directory)', action='store', default=None)
+	parser.add_argument('-o', '--output', help='output folder, shall not already exist (Default: new temporary directory in TEMPFOLDER)', action='store', default=None)
+	parser.add_argument('-O', '--Output', help='output folder, shall already exist (Default: --output)', action='store', default=None)
+	parser.add_argument('-V', '--version', action='version', version='build 1.1')
+	c_Args = parser.parse_args(p_Args)
+	def _actualpath(p_Path):
+		return None if p_Path is None else os.path.normcase(os.path.realpath(os.path.normpath(p_Path)))
+	def _processDirectoryHash(p_Path):
+		"""
+			Walk the directory tree and process a hash
+			@p_Path The directory to process a hash base on its content
+			@return The Hash (sha512)
+		"""
+		if p_Path is None:
+			return 0
+		import hashlib
+		c_CheckSum = hashlib.sha512()
+		for c_Root, c_Dirs, c_Files in os.walk(p_Path, followlinks=False):
+			for c_Name in c_Files:
+				c_CheckSum.update(c_Name.encode('utf-8'))#Use the file name
+				c_CurrPath = os.path.join(c_Root, c_Name)
+				#c_CheckSum.update(str(os.path.getsize(c_CurrPath)).encode('utf-8'))#Use the file size
+				with open(c_CurrPath, 'rb') as c_CurrentFile:
+					while True:
+						v_Buffer = c_CurrentFile.read(8192)
+						if len(v_Buffer) > 0:
+							c_CheckSum.update(v_Buffer)#Use the file content
+						else:
+							break
+			for c_Name in c_Dirs:
+				c_CheckSum.update(c_Name.encode('utf-8'))#Use the directory name
+				c_CurrPath = os.path.join(c_Root, c_Name)
+				if not os.path.islink(c_CurrPath):
+					c_CheckSum.update(_processDirectoryHash(c_CurrPath).encode('utf-8'))#Use the directory content
+		return c_CheckSum.hexdigest()
+	c_ActualPathSrc = _actualpath(c_Args.source)
+	c_ActualPathTmp = _actualpath(c_Args.temp)
+	c_ActualPathOut = _actualpath(c_Args.output)
+	v_NeedToCreateOut = True
+	if c_ActualPathOut is None:
+		c_ActualPathOut = _actualpath(c_Args.Output)
+		v_NeedToCreateOut = False
+		assert (c_ActualPathOut is None) or (os.path.isdir(c_ActualPathOut)), "The output folder has to be a folder"
+	import tempfile
+	v_BuildResult = None
+	c_OrigCWD = os.getcwd()
+	v_TmpPath = None
+	v_BuildError = True
+	try:
+		with tempfile.TemporaryDirectory(suffix='', prefix='', dir=c_ActualPathTmp) as c_TmpFolder:
+			v_TmpPath = _actualpath(c_TmpFolder)#This is needed since on the OS Windows which is case insensitive it may create invalid result when comparing path
+			try:
+				if c_ActualPathOut is None:
+					v_NeedToCreateOut = False
+					c_ActualPathOut = tempfile.mkdtemp(suffix='', prefix='', dir=v_TmpPath)
+				if c_ActualPathSrc is None:
+					c_ActualPathSrc = tempfile.mkdtemp(suffix='', prefix='', dir=v_TmpPath)
+				assert os.path.isdir(c_ActualPathSrc), "The source folder has to be a folder"
+				assert (c_ActualPathTmp is None) or os.path.isdir(c_ActualPathTmp), "The temporary folder has to be a folder"
+				assert (c_ActualPathTmp is None) or not c_ActualPathTmp.startswith(c_ActualPathSrc + os.sep), "The temporary folder cannot be within the source folder"
+				assert not c_ActualPathOut.startswith(c_ActualPathSrc + os.sep), "The output folder cannot be within the source folder"
+				assert not c_ActualPathSrc.startswith(c_ActualPathOut + os.sep), "The source folder cannot be within the output folder"
+				assert (c_ActualPathTmp is None) or not c_ActualPathTmp.startswith(c_ActualPathOut + os.sep), "The temporary folder cannot be within the output folder"
+				if v_NeedToCreateOut:
+					os.makedirs(c_ActualPathOut, exist_ok=False)
+				assert os.path.isdir(c_ActualPathOut), "The output folder has to be a folder"
+				v_DoSrcHashValidation = True
+				try:
+					v_DoSrcHashValidation = S_SrcHashValidation
+				except NameError:
+					pass
+				c_SrcHash = _processDirectoryHash(c_ActualPathSrc) if v_DoSrcHashValidation else 0
+				c_BuildTmpFolder = _actualpath(tempfile.mkdtemp(suffix='', prefix='', dir=v_TmpPath))
+				os.chdir(c_BuildTmpFolder)#Make sure that the current working directory is the Temp folder before doing the build steps
+				v_BuildResult = build(c_ActualPathSrc, c_BuildTmpFolder, c_ActualPathOut)
+				#From this point, the only thing left to do is to delete the temp folder
+				v_BuildError = False
+			finally:
+				if _actualpath(os.getcwd()).startswith(v_TmpPath + os.sep):
+					os.chdir(c_OrigCWD)#Get out of the temp folder since it is about to be deleted
+	except Exception:
+		if v_BuildError:
+			raise
+		else:
+			pass#Problem cleaning temp folder... will be handled in the finally block
+	finally:
+		if v_TmpPath is not None and os.path.isdir(v_TmpPath):
+			#Failed to remove temp folder
+			# Known possible cause:
+			# - On OS Windows if the Tmp folder contains element with long file path
+			# Will now attempt other strategies to to clean up as much as possible
+			# Since the temp folder destiny is to be deleted we can alter its content
+			#  Walk multiple time the temp directory:
+			#  - Remove each file and folder specifically 
+			#  - If delete is not possible, rename them with a shorter name
+			#  The objective is to:
+			#  - Reduce as much as possible the file path length
+			#  - Keep only the problematic files/folder
+			try:
+				v_SawImprovement = True
+				while v_SawImprovement:
+					v_SawImprovement = False
+					for c_Root, c_Dirs, c_Files in os.walk(v_TmpPath, topdown=False):
+						for c_Name in c_Files:
+							try:
+								os.unlink(os.path.join(c_Root, c_Name))
+								v_SawImprovement = True
+							except Exception:
+								try:
+									os.replace(os.path.join(c_Root, c_Name), os.path.join(c_Root, "A"))#Rename to a single character name
+									v_SawImprovement = True
+								except Exception:
+									pass#Will retry later
+						for c_Name in c_Dirs:
+							try:
+								os.rmdir(os.path.join(c_Root, c_Name))
+								v_SawImprovement = True
+							except Exception:
+								try:
+									os.replace(os.path.join(c_Root, c_Name), os.path.join(c_Root, "A"))#Rename to a single character name
+									v_SawImprovement = True
+								except Exception:
+									pass#Will retry later
+				os.rmdir(v_TmpPath)#Give it a try now that the content might have been deleted
+			except Exception:
+				pass#This is not a reason to fail the build yet...
+			if os.path.exists(v_TmpPath):
+				#Strangely the temp folder is still present...
+				#No known reason to reach this area but will try other strategies anyway
+				import shutil
+				try:
+					shutil.rmtree(v_TmpPath)#Try a deep delete of the temp folder.
+				except Exception:
+					pass#This is not a reason to fail the build yet...
+				if os.path.exists(v_TmpPath):
+					import time
+					time.sleep(5)#In last resort give five seconds to other processes and the OS to breath in case they need to cleanly release their handle on the temp folder
+					shutil.rmtree(v_TmpPath)#Last chance to delete temp, if it does not work, it will throw an exception to the user... we did our best.
+	assert not os.path.exists(v_TmpPath), "Temp folder could not be cleaned: " + str(v_TmpPath)
+	assert c_SrcHash == (_processDirectoryHash(c_ActualPathSrc) if v_DoSrcHashValidation else 0), "Source folder was modified by the build process"
+	return v_BuildResult
+
+if __name__ == '__main__':
+	import sys
+	sys.dont_write_bytecode = True
+	sys.exit(main(sys.argv[1:]))
+
