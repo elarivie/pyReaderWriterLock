@@ -9,7 +9,7 @@ For reading about the theory behind the reader-writer problems refer to [Wikiped
 
 # Usage
 
-1. First initialize a new lock base on your access priority need:
+Initialize a new lock base on your access priority need which is going to be use by the threads:
 
 **Reader priority** (*aka First readers-writers problem*)
 
@@ -31,8 +31,6 @@ a = RWLock.RWLockWrite()
 import RWLock
 a = RWLock.RWLockFair()
 ```
-
-2. Use it in multiple threads:
 
 ## Pythonic usage example
 
