@@ -3,7 +3,7 @@ pyReaderWriterLock
 
 **A python implementation of the three Reader-Writer problems.**
 
-Not only does it implement the reader-writer problems, it also support the python lock interface which includes support for timeouts.
+Not only does it implement the reader-writer problems, it is also compliant with the python lock interface which includes support for timeouts.
 
 For reading about the theory behind the reader-writer problems refer to [Wikipedia](https://wikipedia.org/wiki/Readers–writers_problem).
 
