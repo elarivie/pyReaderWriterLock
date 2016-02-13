@@ -3,8 +3,8 @@
 
 """
 	This is a script to build the project
-	
-	It is using template_BUILDME_python3 v3
+
+	It is using template_BUILDME_python3 v4
 
 	This script:
 		- Should be named "BUILDME"
@@ -71,7 +71,7 @@ Exit code 0 if build is successfull
 	)
 	import os
 	parser.add_argument('-s', '--source', help='source folder (Default: Current working directory)', action='store', default=os.getcwd())
-	parser.add_argument('-t', '--temp', help='temporary folder (Default: new temporary directory in the system temporary directory)', action='store', default=None)
+	parser.add_argument('-t', '--temp', help='temporary folder (Default: new temporary directory in the system temporary directory or RAM temp folder if available)', action='store', default=None)
 	parser.add_argument('-o', '--output', help='output folder, shall not already exist (Default: new temporary directory in TEMPFOLDER)', action='store', default=None)
 	parser.add_argument('-O', '--Output', help='output folder, shall already exist (Default: --output)', action='store', default=None)
 	parser.add_argument('-V', '--version', action='version', version='build 1.1')
@@ -108,6 +108,14 @@ Exit code 0 if build is successfull
 		return c_CheckSum.hexdigest()
 	c_ActualPathSrc = _actualpath(c_Args.source)
 	c_ActualPathTmp = _actualpath(c_Args.temp)
+	if c_Args.temp is None:
+		try:
+			#Use RAM temp folder if available
+			c_ActualPathTmpRAM = os.path.abspath(os.path.join(os.sep, "run", "user", str(os.getuid())))
+			if os.path.isdir(c_ActualPathTmpRAM):
+				c_ActualPathTmp = c_ActualPathTmpRAM
+		except AttributeError:
+			pass#os.getuid() is only available on Unix (it is the only os which might have a ram temp folder anyway)
 	c_ActualPathOut = _actualpath(c_Args.output)
 	v_NeedToCreateOut = True
 	if c_ActualPathOut is None:
