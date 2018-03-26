@@ -1,0 +1,4 @@
+include LICENSE.txt
+include NAME
+INCLUDE README.md
+include VERSION
