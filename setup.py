@@ -7,6 +7,7 @@ def read(fname: str) -> str:
 	with open(os.path.join(os.path.dirname(__file__), fname), mode="r", encoding="utf-8") as f:
 		return f.read().strip()
 
+
 setup(
 	metadata_version=2.1,
 	name=read("NAME"),
@@ -23,9 +24,9 @@ setup(
 	keywords=['rwlock', 'read-write lock', 'lock', "priority", "reader", "writer", "fair", "read", "write"],
 	classifiers=[
 		# How mature is this project? Common values are
-		#	 3 - Alpha
-		#	 4 - Beta
-		#	 5 - Production/Stable
+		# 3 - Alpha
+		# 4 - Beta
+		# 5 - Production/Stable
 		'Development Status :: 5 - Production/Stable',
 
 		# Indicate who your project is intended for
@@ -40,7 +41,7 @@ setup(
 		'Programming Language :: Python :: 3.5',
 		'Programming Language :: Python :: 3.6'
 	],
-	project_urls= {
+	project_urls={
 		'Source': 'https://github.com/elarivie/pyReaderWriterLock',
 		'Tracker': 'https://github.com/elarivie/pyReaderWriterLock/issues'
 	},
