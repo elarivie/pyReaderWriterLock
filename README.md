@@ -11,7 +11,7 @@ Reader Writer Lock
 [![Pypi Version](https://img.shields.io/pypi/v/readerwriterlock.svg)][pyReaderWriterLock_Pypi]
 
 [![Code size in bytes](https://img.shields.io/github/languages/code-size/elarivie/pyReaderWriterLock.svg)][pyReaderWriterLock_repo]
-![License](https://img.shields.io/pypi/l/readerwriterlock.svg)
+[![License](https://img.shields.io/pypi/l/readerwriterlock.svg)][pyReaderWriterLock_License]
 
 Not only does it implement the reader-writer problems, it is also compliant with the python lock interface which includes support for timeouts.
 
@@ -97,3 +97,4 @@ Contact
 [pyReaderWriterLock_BugTracker]: https://github.com/elarivie/pyReaderWriterLock/issues
 [pyReaderWriterLock_repo_star]: https://github.com/elarivie/pyReaderWriterLock/stargazers
 [pyReaderWriterLock_Pypi]: https://pypi.python.org/pypi/readerwriterlock
+[pyReaderWriterLock_License]: https://github.com/elarivie/pyReaderWriterLock/blob/master/LICENSE.txt
