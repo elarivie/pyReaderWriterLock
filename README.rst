@@ -64,7 +64,7 @@ Advanced Usage example
 Live example
 ------------
 
-Refer to the file `rwlock_test.py <https://github.com/elarivie/pyReaderWriterLock/blob/master/tests/rwlock_test.py>`_ which can be directly called, it has above 90% line coverage of [rwlock.py](readerwriterlock/rwlock.py).
+Refer to the file `rwlock_test.py <https://github.com/elarivie/pyReaderWriterLock/blob/master/tests/rwlock_test.py>`_ which can be directly called, it has above 90% line coverage of `rwlock.py <https://github.com/elarivie/pyReaderWriterLock/blob/master/readerwriterlock/rwlock.py>`_.
 
 The tests can be initiated by doing
 
