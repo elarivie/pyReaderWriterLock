@@ -4,8 +4,8 @@ from setuptools import setup, find_packages
 
 def read(fname: str) -> str:
 	"""Get the content of a file at the root of the project."""
-	with open(os.path.join(os.path.dirname(__file__), fname), mode="r", encoding="utf-8") as f:
-		return f.read().strip()
+	with open(os.path.join(os.path.dirname(__file__), fname), mode="r", encoding="utf-8") as file_stream:
+		return file_stream.read().strip()
 
 
 setup(
@@ -18,10 +18,9 @@ setup(
 	url="https://github.com/elarivie/pyReaderWriterLock",
 	download_url="https://github.com/elarivie/pyReaderWriterLock",
 	description=("A python implementation of the three Reader-Writer problems."),
-	long_description=read('README.md'),
-	long_description_content_type='text/markdown',
+	long_description=read('README.rst'),
 	license='MIT',
-	keywords=['rwlock', 'read-write lock', 'lock', "priority", "reader", "writer", "fair", "read", "write"],
+	keywords=['rwlock', 'read-write lock', 'lock', "priority", "reader", "writer", "fair", "read", "write", "thread", "synchronize"],
 	classifiers=[
 		# How mature is this project? Common values are
 		# 3 - Alpha

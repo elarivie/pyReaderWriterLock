@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [Released] - 1.0.1 2018-03-31
+
+### Changed
+- Improve badges on README.md
+- Create README.rst to present the pypi package (since pypi does not support Markdown)
+
 ## [Released] - 1.0.0 2018-03-30
 **Note:** Version number was left at 1.0.0 since it is the first release on Pypi.
 
