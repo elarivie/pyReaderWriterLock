@@ -7,16 +7,17 @@ import time
 
 from typing import Optional
 from types import TracebackType
+import typing
 
 
 class RWLockRead():
 	"""A Read/Write lock giving preference to Reader."""
 
-	def __init__(self) -> None:
+	def __init__(self, lock_factory: typing.Callable = threading.Lock) -> None:
 		"""Init."""
 		self.v_read_count = 0
-		self.c_resource = threading.Lock()
-		self.c_lock_read_count = threading.Lock()
+		self.c_resource = lock_factory()
+		self.c_lock_read_count = lock_factory()
 
 	class _aReader():
 		def __init__(self, p_RWLock: "RWLockRead") -> None:
@@ -99,15 +100,15 @@ class RWLockRead():
 class RWLockWrite():
 	"""A Read/Write lock giving preference to Writer."""
 
-	def __init__(self) -> None:
+	def __init__(self, lock_factory: typing.Callable = threading.Lock) -> None:
 		"""Init."""
 		self.v_read_count = 0
 		self.v_write_count = 0
-		self.c_lock_read_count = threading.Lock()
-		self.c_lock_write_count = threading.Lock()
-		self.c_lock_read_entry = threading.Lock()
-		self.c_lock_read_try = threading.Lock()
-		self.c_resource = threading.Lock()
+		self.c_lock_read_count = lock_factory()
+		self.c_lock_write_count = lock_factory()
+		self.c_lock_read_entry = lock_factory()
+		self.c_lock_read_try = lock_factory()
+		self.c_resource = lock_factory()
 
 	class _aReader():
 		def __init__(self, p_RWLock: "RWLockWrite") -> None:
@@ -224,12 +225,12 @@ class RWLockWrite():
 class RWLockFair():
 	"""A Read/Write lock giving fairness to both Reader and Writer."""
 
-	def __init__(self) -> None:
+	def __init__(self, lock_factory: typing.Callable = threading.Lock) -> None:
 		"""Init."""
 		self.v_read_count = 0
-		self.c_lock_read_count = threading.Lock()
-		self.c_lock_read = threading.Lock()
-		self.c_lock_write = threading.Lock()
+		self.c_lock_read_count = lock_factory()
+		self.c_lock_read = lock_factory()
+		self.c_lock_write = lock_factory()
 
 	class _aReader():
 		def __init__(self, p_RWLock: "RWLockFair") -> None:
