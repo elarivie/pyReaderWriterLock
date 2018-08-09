@@ -9,7 +9,7 @@ from typing import Optional
 from types import TracebackType
 
 
-class RWLockRead(object):
+class RWLockRead():
 	"""A Read/Write lock giving preference to Reader."""
 
 	def __init__(self) -> None:
@@ -18,7 +18,7 @@ class RWLockRead(object):
 		self.c_resource = threading.Lock()
 		self.c_lock_read_count = threading.Lock()
 
-	class _aReader(object):
+	class _aReader():
 		def __init__(self, p_RWLock: "RWLockRead") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked = False
@@ -60,7 +60,7 @@ class RWLockRead(object):
 			self.release()
 			return False
 
-	class _aWriter(object):
+	class _aWriter():
 		def __init__(self, p_RWLock: "RWLockRead") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked = False
@@ -96,7 +96,7 @@ class RWLockRead(object):
 		return RWLockRead._aWriter(self)
 
 
-class RWLockWrite(object):
+class RWLockWrite():
 	"""A Read/Write lock giving preference to Writer."""
 
 	def __init__(self) -> None:
@@ -109,7 +109,7 @@ class RWLockWrite(object):
 		self.c_lock_read_try = threading.Lock()
 		self.c_resource = threading.Lock()
 
-	class _aReader(object):
+	class _aReader():
 		def __init__(self, p_RWLock: "RWLockWrite") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked = False
@@ -162,7 +162,7 @@ class RWLockWrite(object):
 			self.release()
 			return False
 
-	class _aWriter(object):
+	class _aWriter():
 		def __init__(self, p_RWLock: "RWLockWrite") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked = False
@@ -221,7 +221,7 @@ class RWLockWrite(object):
 		return RWLockWrite._aWriter(self)
 
 
-class RWLockFair(object):
+class RWLockFair():
 	"""A Read/Write lock giving fairness to both Reader and Writer."""
 
 	def __init__(self) -> None:
@@ -231,7 +231,7 @@ class RWLockFair(object):
 		self.c_lock_read = threading.Lock()
 		self.c_lock_write = threading.Lock()
 
-	class _aReader(object):
+	class _aReader():
 		def __init__(self, p_RWLock: "RWLockFair") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked = False
@@ -278,7 +278,7 @@ class RWLockFair(object):
 			self.release()
 			return False
 
-	class _aWriter(object):
+	class _aWriter():
 		def __init__(self, p_RWLock: "RWLockFair") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked = False
