@@ -6,13 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [Released] - 1.0.3 2018-09-28
+## [Released] - 1.0.2 2018-09-28
 
 ### Added
 - More folders/files to be deleted by the "clean" target of the makefile to prevent previous build to pollute next build whl file
   - (fix: https://github.com/elarivie/pyReaderWriterLock/issues/1)
-
-## [Released] - 1.0.2 2018-08-08
 
 ### Changed
 - Fix lint warning R0205 (useless-object-inheritance)

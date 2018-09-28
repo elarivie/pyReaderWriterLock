@@ -65,4 +65,3 @@ clean:
 	${RM_RF} ${srcdir}/build
 
 .PHONY: all BUILDME HEARTBEAT AUTHORS gitcommit dist publish publish-test clean
-
