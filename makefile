@@ -61,5 +61,8 @@ publish-test: dist
 clean:
 	${RM_RF} ${srcdir}/dist
 	${RM_RF} ${srcdir}/${THENAME}.egg-info
+	${RM_RF} ${srcdir}/.mypy_cache
+	${RM_RF} ${srcdir}/build
 
 .PHONY: all BUILDME HEARTBEAT AUTHORS gitcommit dist publish publish-test clean
+
