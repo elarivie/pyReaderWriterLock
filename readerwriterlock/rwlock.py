@@ -5,15 +5,16 @@
 import threading
 import time
 
+from typing import Callable
 from typing import Optional
+from typing import Type
 from types import TracebackType
-import typing
 
 
 class RWLockRead():
 	"""A Read/Write lock giving preference to Reader."""
 
-	def __init__(self, lock_factory: typing.Callable = threading.Lock) -> None:
+	def __init__(self, lock_factory: Callable[[], threading.Lock] = threading.Lock) -> None:
 		"""Init."""
 		self.v_read_count = 0
 		self.c_resource = lock_factory()
@@ -51,13 +52,13 @@ class RWLockRead():
 			self.c_rw_lock.c_lock_read_count.release()
 
 		def locked(self) -> bool:
-			"""Answer to 'is file locked?'."""
+			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
 		def __enter__(self) -> None:
 			self.acquire()
 
-		def __exit__(self, exc_type, exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
+		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
 			self.release()
 			return False
 
@@ -78,13 +79,13 @@ class RWLockRead():
 			self.c_rw_lock.c_resource.release()
 
 		def locked(self) -> bool:
-			"""Answer to 'is file locked?'."""
+			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
 		def __enter__(self) -> None:
 			self.acquire()
 
-		def __exit__(self, exc_type, exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
+		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
 			self.release()
 			return False
 
@@ -100,7 +101,7 @@ class RWLockRead():
 class RWLockWrite():
 	"""A Read/Write lock giving preference to Writer."""
 
-	def __init__(self, lock_factory: typing.Callable = threading.Lock) -> None:
+	def __init__(self, lock_factory: Callable[[], threading.Lock] = threading.Lock) -> None:
 		"""Init."""
 		self.v_read_count = 0
 		self.v_write_count = 0
@@ -153,13 +154,13 @@ class RWLockWrite():
 			self.c_rw_lock.c_lock_read_count.release()
 
 		def locked(self) -> bool:
-			"""Answer to 'is file locked?'."""
+			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
 		def __enter__(self) -> None:
 			self.acquire()
 
-		def __exit__(self, exc_type, exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
+		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
 			self.release()
 			return False
 
@@ -203,13 +204,13 @@ class RWLockWrite():
 			self.c_rw_lock.c_lock_write_count.release()
 
 		def locked(self) -> bool:
-			"""Answer to 'is file locked?'."""
+			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
 		def __enter__(self) -> None:
 			self.acquire()
 
-		def __exit__(self, exc_type, exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
+		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
 			self.release()
 			return False
 
@@ -225,7 +226,7 @@ class RWLockWrite():
 class RWLockFair():
 	"""A Read/Write lock giving fairness to both Reader and Writer."""
 
-	def __init__(self, lock_factory: typing.Callable = threading.Lock) -> None:
+	def __init__(self, lock_factory: Callable[[], threading.Lock] = threading.Lock) -> None:
 		"""Init."""
 		self.v_read_count = 0
 		self.c_lock_read_count = lock_factory()
@@ -269,13 +270,13 @@ class RWLockFair():
 			self.c_rw_lock.c_lock_read_count.release()
 
 		def locked(self) -> bool:
-			"""Answer to 'is file locked?'."""
+			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
 		def __enter__(self) -> None:
 			self.acquire()
 
-		def __exit__(self, exc_type, exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
+		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
 			self.release()
 			return False
 
@@ -304,13 +305,13 @@ class RWLockFair():
 			self.c_rw_lock.c_lock_read.release()
 
 		def locked(self) -> bool:
-			"""Answer to 'is file locked?'."""
+			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
 		def __enter__(self) -> None:
 			self.acquire()
 
-		def __exit__(self, exc_type, exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
+		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
 			self.release()
 			return False
 
