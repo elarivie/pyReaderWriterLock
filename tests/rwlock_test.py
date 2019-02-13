@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Unit tests."""
-
+import os
 import unittest
 
 
@@ -147,7 +147,9 @@ class TestRWLock(unittest.TestCase):
 			c_priority_f = c_value_end[2] - c_value_end[1]
 			self.assertGreater(c_priority_w, c_priority_r)
 			self.assertGreater(c_priority_w, c_priority_f)
-			self.assertGreater(c_priority_f, c_priority_r)
+			if "CI" not in os.environ.copy():
+				# The surrounding "AssertGreater" checks are highly dependant on the heuristic that the CPU is at constant speed along the 3 minutes test which is not true with CI servers and creates a lot of false positive.
+				self.assertGreater(c_priority_f, c_priority_r)
 
 
 if __name__ == '__main__':

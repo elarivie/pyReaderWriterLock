@@ -6,8 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [Released] - 1.0.3 2019-02-13
+
 ### Added
 - Allow alternate lock implementations to be used
+- Python 3.7 to the list of supported python version
 
 ## [Released] - 1.0.2 2018-09-28
 
