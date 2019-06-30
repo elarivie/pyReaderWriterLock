@@ -76,7 +76,7 @@ The tests can be initiated by doing
 ```
 
 # Build
-This project use the [BUILDME](https://github.com/elarivie/BUILDME) interface, you may therefore build the project by simply doing:
+This project uses the [BUILDME](https://github.com/elarivie/BUILDME) interface, you may therefore build the project by simply doing:
 ```bash
 ./BUILDME
 ```
