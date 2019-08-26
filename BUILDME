@@ -48,6 +48,7 @@ def BUILDME(s: str, t: str, o: str) -> int:
 		# Copy the files
 		shutil.copy(os.path.join(s, S_NAME, "__init__.py"), os.path.join(c_CurrDestination, S_NAME))
 		shutil.copy(os.path.join(s, S_NAME, "rwlock.py"), os.path.join(c_CurrDestination, S_NAME))
+		shutil.copy(os.path.join(s, S_NAME, "py.typed"), os.path.join(c_CurrDestination, S_NAME))
 		shutil.copy(os.path.join(s, "tests", "rwlock_test.py"), os.path.join(c_CurrDestination, "tests"))
 		if t == c_CurrDestination:
 			# Prepare environment variables
