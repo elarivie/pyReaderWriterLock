@@ -9,6 +9,7 @@ from typing import Callable
 from typing import Optional
 from typing import Type
 from types import TracebackType
+import typing_extensions
 
 
 class RWLockRead():
@@ -58,7 +59,7 @@ class RWLockRead():
 		def __enter__(self) -> None:
 			self.acquire()
 
-		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
+		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> typing_extensions.Literal[False]:
 			self.release()
 			return False
 
@@ -85,7 +86,7 @@ class RWLockRead():
 		def __enter__(self) -> None:
 			self.acquire()
 
-		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
+		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> typing_extensions.Literal[False]:
 			self.release()
 			return False
 
@@ -160,7 +161,7 @@ class RWLockWrite():
 		def __enter__(self) -> None:
 			self.acquire()
 
-		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
+		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> typing_extensions.Literal[False]:
 			self.release()
 			return False
 
@@ -210,7 +211,7 @@ class RWLockWrite():
 		def __enter__(self) -> None:
 			self.acquire()
 
-		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
+		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> typing_extensions.Literal[False]:
 			self.release()
 			return False
 
@@ -276,7 +277,7 @@ class RWLockFair():
 		def __enter__(self) -> None:
 			self.acquire()
 
-		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
+		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> typing_extensions.Literal[False]:
 			self.release()
 			return False
 
@@ -311,7 +312,7 @@ class RWLockFair():
 		def __enter__(self) -> None:
 			self.acquire()
 
-		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> bool:
+		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> typing_extensions.Literal[False]:
 			self.release()
 			return False
 

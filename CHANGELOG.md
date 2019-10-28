@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+- Fix mypy lint error '"bool" is invalid as return type for "__exit__" that always returns False'
+
 ## [Released] - 1.0.4 2019-06-29
 
 
