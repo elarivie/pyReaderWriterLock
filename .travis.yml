@@ -1,12 +1,16 @@
-dist: xenial
+dist: bionic
+
+
+sudo: false
 
 language:
     - python
 
 python:
-    - "3.5"
     - "3.6"
     - "3.7"
+    - "3.8"
+
 install:
   - pip install -r requirements.txt
 
@@ -14,3 +18,8 @@ os:
     - linux
 
 script: './BUILDME'
+
+notifications:
+  email:
+    on_success: never
+    on_failure: change

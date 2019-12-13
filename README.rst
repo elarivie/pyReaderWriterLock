@@ -12,7 +12,7 @@ Installation
 
 Install the `python <https://www.python.org>`_ package `readerwriterlock <https://pypi.python.org/pypi/readerwriterlock/>`_
 
-  python3 -m pip install readerwriterlock
+  python3 -m pip install -U readerwriterlock
 
 
 Usage

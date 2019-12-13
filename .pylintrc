@@ -128,7 +128,8 @@ disable=print-statement,
         dict-keys-not-iterating,
         dict-values-not-iterating,
         C0122,
-        W0640
+        W0108,
+        W0640,
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

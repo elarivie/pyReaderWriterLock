@@ -2,39 +2,44 @@
 # -*- coding: utf-8 -*-
 
 """Unit tests."""
+
+from typing import Tuple
+
 import os
 import unittest
+from readerwriterlock import rwlock
 
 
 class TestRWLock(unittest.TestCase):
 	"""Test RWLock different strategies."""
 
-	def setUp(self):
+	def setUp(self) -> None:
 		"""Test setup."""
 		self.v_value = 0
-		from readerwriterlock import rwlock
-		self.c_rwlock_instance = [rwlock.RWLockRead(), rwlock.RWLockWrite(), rwlock.RWLockFair()]
+		self.c_rwlock_instance: Tuple[rwlock.RWLockable, ...] = tuple([rwlock.RWLockRead(), rwlock.RWLockWrite(), rwlock.RWLockFair()])
 
-	def test_single_access(self):
+	def test_single_access(self) -> None:
 		"""Test single access."""
 		print("test_SingleAccess")
 		for c_curr_lock in self.c_rwlock_instance:
 			with self.subTest(c_curr_lock):
-				for c_curr_lock_x in [c_curr_lock.gen_rlock(), c_curr_lock.gen_wlock()]:
+				locks: Tuple[rwlock.Lockable, rwlock.Lockable] = (c_curr_lock.gen_rlock(), c_curr_lock.gen_wlock())
+				for c_curr_lock_x in locks:
 					self.assertFalse(c_curr_lock_x.locked())
 					with c_curr_lock_x:
 						self.assertTrue(c_curr_lock_x.locked())
 					self.assertFalse(c_curr_lock_x.locked())
-					for c_params in [[0, -1], [1, -1], [1, 0], [1, 1]]:
-						with self.subTest([c_curr_lock, c_curr_lock_x, c_params]):
-							self.assertTrue(c_curr_lock_x.acquire(blocking=c_params[0], timeout=c_params[1]))
+					data_set: Tuple[Tuple[bool, int], ...] = tuple([(False, -1), (True, -1), (True, 0), (True, 1)])
+					for c_params in data_set:
+						with self.subTest((c_curr_lock, c_curr_lock_x, c_params)):
+							self.assertTrue(c_curr_lock_x.acquire(blocking=bool(c_params[0]), timeout=c_params[1]))
 							self.assertTrue(c_curr_lock_x.locked())
 							c_curr_lock_x.release()
 							self.assertFalse(c_curr_lock_x.locked())
 							with self.assertRaises(RuntimeError):
 								c_curr_lock_x.release()
 
-	def test_multi_read(self):
+	def test_multi_read(self) -> None:
 		"""Test multi read."""
 		print("test_MultiRead")
 		for c_curr_lock in self.c_rwlock_instance:
@@ -64,7 +69,7 @@ class TestRWLock(unittest.TestCase):
 				c_lock_w1.release()
 				self.assertFalse(c_lock_w1.locked())
 
-	def test_multi_write(self):
+	def test_multi_write(self) -> None:
 		"""Test multi write."""
 		print("test_MultiWrite")
 		for c_curr_lock in self.c_rwlock_instance:
@@ -94,7 +99,7 @@ class TestRWLock(unittest.TestCase):
 				self.assertFalse(c_lock_r0.locked())
 				self.assertFalse(c_lock_r1.locked())
 
-	def test_multi_thread(self):
+	def test_multi_thread(self) -> None:
 		"""Test Multi Thread."""
 		import threading
 		import time
@@ -102,7 +107,7 @@ class TestRWLock(unittest.TestCase):
 		print("test_MultiThread (" + str(s_period_sec * len(self.c_rwlock_instance)) + " sec)")
 		c_value_end = []
 		for c_curr_lock in self.c_rwlock_instance:
-			def writer1():
+			def writer1() -> None:
 				"""Writer."""
 				c_enter_time = time.time()
 				c_lock_w1 = c_curr_lock.gen_wlock()
@@ -115,7 +120,7 @@ class TestRWLock(unittest.TestCase):
 					time.sleep(0.1)
 					c_lock_w1.release()
 
-			def reader1():
+			def reader1() -> None:
 				"""Reader."""
 				c_enter_time = time.time()
 				c_lock_r1 = c_curr_lock.gen_rlock()

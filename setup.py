@@ -37,16 +37,16 @@ setup(
 		'License :: OSI Approved :: MIT License',
 
 		# Specify the Python versions supported here:
-		'Programming Language :: Python :: 3.5',
 		'Programming Language :: Python :: 3.6',
-		'Programming Language :: Python :: 3.7'
+		'Programming Language :: Python :: 3.7',
+		'Programming Language :: Python :: 3.8'
 	],
 	project_urls={
 		'Source': 'https://github.com/elarivie/pyReaderWriterLock',
 		'Tracker': 'https://github.com/elarivie/pyReaderWriterLock/issues'
 	},
 	install_requires=[],
-	python_requires='>=3',
+	python_requires='>=3.6',
 	zip_safe=False,
 	package_data={'readerwriterlock': ['py.typed']}
 )

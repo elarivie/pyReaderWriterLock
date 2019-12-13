@@ -9,22 +9,59 @@ from typing import Callable
 from typing import Optional
 from typing import Type
 from types import TracebackType
-import typing_extensions
+from typing_extensions import Protocol
 
 
-class RWLockRead():
+class Lockable(Protocol):
+	"""Lockable.  Compatible with threading.Lock interface."""
+
+	def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
+		"""Acquire a lock."""
+		...
+
+	def release(self) -> None:
+		"""Release the lock."""
+
+	def locked(self) -> bool:
+		"""Answer to 'is it currently locked?'."""
+		return False  # Will be overriden.  # pragma: no cover
+
+	def __enter__(self) -> bool:
+		"""Enter context manager."""
+		self.acquire()
+		return False
+
+	def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> Optional[bool]:  # type: ignore
+		"""Exit context manager."""
+		self.release()
+		return False
+
+
+class RWLockable(Protocol):
+	"""Read/write lock."""
+
+	def gen_rlock(self) -> Lockable:
+		"""Generate a reader lock."""
+
+	def gen_wlock(self) -> Lockable:
+		"""Generate a writer lock."""
+
+
+class RWLockRead(RWLockable):
 	"""A Read/Write lock giving preference to Reader."""
 
-	def __init__(self, lock_factory: Callable[[], threading.Lock] = threading.Lock) -> None:
+	def __init__(self, lock_factory: Callable[[], Lockable] = lambda: threading.Lock()) -> None:
 		"""Init."""
 		self.v_read_count = 0
 		self.c_resource = lock_factory()
 		self.c_lock_read_count = lock_factory()
+		super().__init__()
 
-	class _aReader():
+	class _aReader(Lockable):
 		def __init__(self, p_RWLock: "RWLockRead") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked = False
+			super().__init__()
 
 		def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -56,17 +93,11 @@ class RWLockRead():
 			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
-		def __enter__(self) -> None:
-			self.acquire()
-
-		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> typing_extensions.Literal[False]:
-			self.release()
-			return False
-
-	class _aWriter():
+	class _aWriter(Lockable):
 		def __init__(self, p_RWLock: "RWLockRead") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked = False
+			super().__init__()
 
 		def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -83,13 +114,6 @@ class RWLockRead():
 			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
-		def __enter__(self) -> None:
-			self.acquire()
-
-		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> typing_extensions.Literal[False]:
-			self.release()
-			return False
-
 	def gen_rlock(self) -> "RWLockRead._aReader":
 		"""Generate a reader lock."""
 		return RWLockRead._aReader(self)
@@ -99,10 +123,10 @@ class RWLockRead():
 		return RWLockRead._aWriter(self)
 
 
-class RWLockWrite():
+class RWLockWrite(RWLockable):
 	"""A Read/Write lock giving preference to Writer."""
 
-	def __init__(self, lock_factory: Callable[[], threading.Lock] = threading.Lock) -> None:
+	def __init__(self, lock_factory: Callable[[], Lockable] = lambda: threading.Lock()) -> None:
 		"""Init."""
 		self.v_read_count = 0
 		self.v_write_count = 0
@@ -111,11 +135,13 @@ class RWLockWrite():
 		self.c_lock_read_entry = lock_factory()
 		self.c_lock_read_try = lock_factory()
 		self.c_resource = lock_factory()
+		super().__init__()
 
-	class _aReader():
+	class _aReader(Lockable):
 		def __init__(self, p_RWLock: "RWLockWrite") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked = False
+			super().__init__()
 
 		def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -158,17 +184,11 @@ class RWLockWrite():
 			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
-		def __enter__(self) -> None:
-			self.acquire()
-
-		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> typing_extensions.Literal[False]:
-			self.release()
-			return False
-
-	class _aWriter():
+	class _aWriter(Lockable):
 		def __init__(self, p_RWLock: "RWLockWrite") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked = False
+			super().__init__()
 
 		def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -208,13 +228,6 @@ class RWLockWrite():
 			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
-		def __enter__(self) -> None:
-			self.acquire()
-
-		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> typing_extensions.Literal[False]:
-			self.release()
-			return False
-
 	def gen_rlock(self) -> "RWLockWrite._aReader":
 		"""Generate a reader lock."""
 		return RWLockWrite._aReader(self)
@@ -224,20 +237,22 @@ class RWLockWrite():
 		return RWLockWrite._aWriter(self)
 
 
-class RWLockFair():
+class RWLockFair(RWLockable):
 	"""A Read/Write lock giving fairness to both Reader and Writer."""
 
-	def __init__(self, lock_factory: Callable[[], threading.Lock] = threading.Lock) -> None:
+	def __init__(self, lock_factory: Callable[[], Lockable] = threading.Lock) -> None:
 		"""Init."""
 		self.v_read_count = 0
 		self.c_lock_read_count = lock_factory()
 		self.c_lock_read = lock_factory()
 		self.c_lock_write = lock_factory()
+		super().__init__()
 
-	class _aReader():
+	class _aReader(Lockable):
 		def __init__(self, p_RWLock: "RWLockFair") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked = False
+			super().__init__()
 
 		def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -274,17 +289,11 @@ class RWLockFair():
 			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
-		def __enter__(self) -> None:
-			self.acquire()
-
-		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> typing_extensions.Literal[False]:
-			self.release()
-			return False
-
-	class _aWriter():
+	class _aWriter(Lockable):
 		def __init__(self, p_RWLock: "RWLockFair") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked = False
+			super().__init__()
 
 		def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -308,13 +317,6 @@ class RWLockFair():
 		def locked(self) -> bool:
 			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
-
-		def __enter__(self) -> None:
-			self.acquire()
-
-		def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> typing_extensions.Literal[False]:
-			self.release()
-			return False
 
 	def gen_rlock(self) -> "RWLockFair._aReader":
 		"""Generate a reader lock."""
