@@ -45,7 +45,7 @@ setup(
 		'Source': 'https://github.com/elarivie/pyReaderWriterLock',
 		'Tracker': 'https://github.com/elarivie/pyReaderWriterLock/issues'
 	},
-	install_requires=[],
+	install_requires=['typing_extensions'],
 	python_requires='>=3.6',
 	zip_safe=False,
 	package_data={'readerwriterlock': ['py.typed']}
