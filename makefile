@@ -64,4 +64,4 @@ clean:
 	${RM_RF} ${srcdir}/.mypy_cache
 	${RM_RF} ${srcdir}/build
 
-.PHONY: all BUILDME HEARTBEAT AUTHORS gitcommit dist publish publish-test clean
+.PHONY: all BUILDME AUTHORS gitcommit dist publish publish-test clean

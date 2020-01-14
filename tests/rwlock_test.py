@@ -7,6 +7,8 @@ from typing import Tuple
 
 import os
 import unittest
+import threading
+import time
 from readerwriterlock import rwlock
 
 
@@ -101,8 +103,6 @@ class TestRWLock(unittest.TestCase):
 
 	def test_multi_thread(self) -> None:
 		"""Test Multi Thread."""
-		import threading
-		import time
 		s_period_sec = 60
 		print("test_MultiThread (" + str(s_period_sec * len(self.c_rwlock_instance)) + " sec)")
 		c_value_end = []

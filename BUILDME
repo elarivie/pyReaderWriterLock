@@ -15,9 +15,15 @@ This script:
 
 from typing import Optional
 from typing import Sequence
+import argparse
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
 
 
-def BUILDME(s: str, t: str, o: str) -> int:
+def buildme(s: str, t: str, o: str) -> int:
 	"""
 	Build the project.
 
@@ -26,58 +32,54 @@ def BUILDME(s: str, t: str, o: str) -> int:
 	@param o A folder where the build result should be written to
 	@returns Exit code 0 on success or raise an Exception if something failed
 	"""
-	import os
-	import shutil
-	import subprocess
-	import sys
 
-	v_exitCode = 0
+	v_exit_code = 0
 
 	# Fetch the project name.
-	with open(os.path.join(s, "NAME"), "r") as c_fileHandle:
-		S_NAME = c_fileHandle.read().strip()
+	with open(os.path.join(s, "NAME"), "r") as c_file_handle:
+		s_name = c_file_handle.read().strip()
 
 	# Running unit test
 	assert sys.executable is not None
 	assert 0 < len(sys.executable)
 
-	for c_CurrDestination in [t, o]:
+	for c_curr_destination in [t, o]:
 		# Create output directories.
-		os.makedirs(os.path.join(c_CurrDestination, S_NAME))
-		os.makedirs(os.path.join(c_CurrDestination, "tests"))
+		os.makedirs(os.path.join(c_curr_destination, s_name))
+		os.makedirs(os.path.join(c_curr_destination, "tests"))
 		# Copy the files
-		shutil.copy(os.path.join(s, S_NAME, "__init__.py"), os.path.join(c_CurrDestination, S_NAME))
-		shutil.copy(os.path.join(s, S_NAME, "rwlock.py"), os.path.join(c_CurrDestination, S_NAME))
-		shutil.copy(os.path.join(s, S_NAME, "py.typed"), os.path.join(c_CurrDestination, S_NAME))
-		shutil.copy(os.path.join(s, "tests", "rwlock_test.py"), os.path.join(c_CurrDestination, "tests"))
-		if t == c_CurrDestination:
+		shutil.copy(os.path.join(s, s_name, "__init__.py"), os.path.join(c_curr_destination, s_name))
+		shutil.copy(os.path.join(s, s_name, "rwlock.py"), os.path.join(c_curr_destination, s_name))
+		shutil.copy(os.path.join(s, s_name, "py.typed"), os.path.join(c_curr_destination, s_name))
+		shutil.copy(os.path.join(s, "tests", "rwlock_test.py"), os.path.join(c_curr_destination, "tests"))
+		if t == c_curr_destination:
 			# Prepare environment variables
 			my_env = os.environ.copy()
 			try:
-				my_env["PYTHONPATH"] = c_CurrDestination + ":" + my_env["PYTHONPATH"]
+				my_env["PYTHONPATH"] = c_curr_destination + ":" + my_env["PYTHONPATH"]
 			except KeyError:
-				my_env["PYTHONPATH"] = c_CurrDestination
+				my_env["PYTHONPATH"] = c_curr_destination
 			if True:  # Lint
 				if True:  # StaticCode analysis: mypy
-					if 0 != subprocess.call([sys.executable, "-m", "mypy", "--config-file", os.path.join(s, "mypy.ini"), "-p", S_NAME], universal_newlines=True, cwd=t, env=my_env):
-						v_exitCode = 1
-					if 0 != subprocess.call([sys.executable, "-m", "mypy", "--config-file", os.path.join(s, "mypy.ini"), os.path.join(c_CurrDestination, "tests", "rwlock_test.py")], universal_newlines=True, cwd=t, env=my_env):
-						v_exitCode = 1
+					if 0 != subprocess.call([sys.executable, "-m", "mypy", "--config-file", os.path.join(s, "setup.cfg"), "-p", s_name], universal_newlines=True, cwd=t, env=my_env):
+						v_exit_code = 1
+					if 0 != subprocess.call([sys.executable, "-m", "mypy", "--config-file", os.path.join(s, "setup.cfg"), os.path.join(c_curr_destination, "tests", "rwlock_test.py")], universal_newlines=True, cwd=t, env=my_env):
+						v_exit_code = 1
 				if True:  # Coding standard: pylint
-					if 0 != subprocess.call([sys.executable, "-m", "pylint", "--persistent", "n", "--rcfile", os.path.join(s, ".pylintrc"), S_NAME], universal_newlines=True, cwd=t, env=my_env):
-						v_exitCode = 1
+					if 0 != subprocess.call([sys.executable, "-m", "pylint", "--persistent", "n", "--rcfile", os.path.join(s, "setup.cfg"), s_name], universal_newlines=True, cwd=t, env=my_env):
+						v_exit_code = 1
 				if True:  # Coding standard: flake8
-					for c_currFolder in [S_NAME, "tests"]:
-						if 0 != subprocess.call([sys.executable, "-m", "flake8", "--show-source", "--config=" + os.path.join(s, ".flake8"), c_currFolder], universal_newlines=True, cwd=t, env=my_env):
-							v_exitCode = 1
+					for c_curr_folder in [s_name, "tests"]:
+						if 0 != subprocess.call([sys.executable, "-m", "flake8", "--show-source", "--config=" + os.path.join(s, "setup.cfg"), c_curr_folder], universal_newlines=True, cwd=t, env=my_env):
+							v_exit_code = 1
 				if True:  # Documentation standard: pydocstyle
-					for c_currFolder in [S_NAME, "tests"]:
-						if 0 != subprocess.call([sys.executable, "-m", "pydocstyle", "--explain", "--source", c_currFolder], universal_newlines=True, cwd=t, env=my_env):
-							v_exitCode = 1
+					for c_curr_folder in [s_name, "tests"]:
+						if 0 != subprocess.call([sys.executable, "-m", "pydocstyle", "--explain", "--source", c_curr_folder, "--config", os.path.join(s, "setup.cfg")], universal_newlines=True, cwd=t, env=my_env):
+							v_exit_code = 1
 			if True:  # Run unit tests
 				if 0 != subprocess.call([sys.executable, os.path.join(t, "tests", "rwlock_test.py")], universal_newlines=True, cwd=t, env=my_env):
-					v_exitCode = 1
-	return v_exitCode
+					v_exit_code = 1
+	return v_exit_code
 
 ########################################################
 ########################################################
@@ -93,22 +95,17 @@ def BUILDME(s: str, t: str, o: str) -> int:
 
 def main(p_args: Sequence[str]) -> int:
 	"""Main."""
-	import argparse
-	parser = argparse.ArgumentParser(
-		description="Build the project",
-		epilog="""
+	parser = argparse.ArgumentParser(description="Build the project", epilog="""
 Exit code 0 if build is successfull
-"""
-	)
-	import os
+""")
 	parser.add_argument("-s", help="source folder (Default: Current working directory)", action="store", default=os.getcwd())
 	parser.add_argument("-t", help="temporary folder (Default: new temporary directory in the system temporary directory or RAM temp folder if available)", action="store", default=None)
 	parser.add_argument("-o", help="output folder, shall not already exist (Default: new temporary directory in TEMPFOLDER)", action="store", default=None)
 	parser.add_argument("-V", "--version", action="version", version="BUILDME 2.0.0")
 	c_args = parser.parse_args(p_args)
 
-	def _actualpath(p_Path: Optional[str]) -> Optional[str]:
-		return None if p_Path is None else os.path.normcase(os.path.realpath(os.path.normpath(p_Path)))
+	def _actualpath(p_path: Optional[str]) -> Optional[str]:
+		return None if p_path is None else os.path.normcase(os.path.realpath(os.path.normpath(p_path)))
 
 	c_path = [_actualpath(x) for x in [c_args.s, c_args.t, c_args.o]]
 
@@ -121,94 +118,37 @@ Exit code 0 if build is successfull
 				c_path[1] = None
 		except AttributeError:
 			pass  # os.getuid() is only available on Unix (it is the only os which might have a ram temp folder anyway)
-	v_BuildResult = None
-	c_OrigCWD = os.getcwd()
-	v_TmpPath = None
-	v_BuildError = True
+	v_build_result = None
+	c_orig_cwd = os.getcwd()
+	v_tmp_path = None
+	v_build_error = True
 	try:
-		import tempfile
-		with tempfile.TemporaryDirectory(suffix="", prefix="", dir=c_path[1]) as c_TmpFolder:
-			v_TmpPath = _actualpath(c_TmpFolder)
-			assert v_TmpPath is not None
+		with tempfile.TemporaryDirectory(suffix="", prefix="", dir=c_path[1]) as c_tmp_folder:
+			v_tmp_path = _actualpath(c_tmp_folder)
+			assert v_tmp_path is not None
 			try:
 				c_path[1] = None
 				for i in [0, 1, 2]:
 					if c_path[i] is None:
-						c_path[i] = _actualpath(tempfile.mkdtemp(suffix="", prefix="", dir=v_TmpPath))
+						c_path[i] = _actualpath(tempfile.mkdtemp(suffix="", prefix="", dir=v_tmp_path))
 				assert c_path[1] is not None
 
 				os.chdir(c_path[1])  # Make sure that the current working directory is the Temp folder before doing the build steps
-				v_BuildResult = BUILDME(*c_path)
+				v_build_result = buildme(*c_path)
 				# From this point, the only thing left to do is to delete the temp folder
-				v_BuildError = False
+				v_build_error = False
 			finally:
-				if str(_actualpath(os.getcwd())).startswith(v_TmpPath + os.sep):
-					os.chdir(c_OrigCWD)  # Get out of the temp folder since it is about to be deleted
-	except Exception:
-		if v_BuildError:
-			raise
-		else:
-			pass  # Problem cleaning temp folder... will be handled in the finally block
+				os.chdir(c_orig_cwd)  # Get out of the temp folder since it is about to be deleted
+	except BaseException:
+		if v_build_error: raise
+		# Problem cleaning temp folder... will be handled in the finally block
 	finally:
-		if v_TmpPath is not None and os.path.isdir(v_TmpPath):
-			# Failed to remove temp folder
-			# Known possible cause:
-			# - On OS Windows if the Tmp folder contains element with long file path
-			# Will now attempt other strategies to to clean up as much as possible
-			# Since the temp folder destiny is to be deleted we can alter its content
-			#  Walk multiple time the temp directory:
-			#  - Remove each file and folder specifically
-			#  - If delete is not possible, rename them with a shorter name
-			#  The objective is to:
-			#  - Reduce as much as possible the file path length
-			#  - Keep only the problematic files/folder
-			try:
-				v_SawImprovement = True
-				while v_SawImprovement:
-					v_SawImprovement = False
-					for c_Root, c_Dirs, c_Files in os.walk(v_TmpPath, topdown=False):
-						for c_Name in c_Files:
-							try:
-								os.unlink(os.path.join(c_Root, c_Name))
-								v_SawImprovement = True
-							except Exception:
-								try:
-									os.replace(os.path.join(c_Root, c_Name), os.path.join(c_Root, "A"))  # Rename to a single character name
-									v_SawImprovement = True
-								except Exception:
-									pass  # Will retry later
-						for c_Name in c_Dirs:
-							try:
-								os.rmdir(os.path.join(c_Root, c_Name))
-								v_SawImprovement = True
-							except Exception:
-								try:
-									os.replace(os.path.join(c_Root, c_Name), os.path.join(c_Root, "A"))  # Rename to a single character name
-									v_SawImprovement = True
-								except Exception:
-									pass  # Will retry later
-				os.rmdir(v_TmpPath)  # Give it a try now that the content might have been deleted
-			except Exception:
-				pass  # This is not a reason to fail the build yet...
-			if os.path.exists(v_TmpPath):
-				# Strangely the temp folder is still present...
-				# No known reason to reach this area but will try other strategies anyway
-				import shutil
-				try:
-					shutil.rmtree(v_TmpPath)  # Try a deep delete of the temp folder.
-				except Exception:
-					pass  # This is not a reason to fail the build yet...
-				if os.path.exists(v_TmpPath):
-					import time
-					time.sleep(5)  # In last resort give five seconds to other processes and the OS to breath in case they need to cleanly release their handle on the temp folder
-					shutil.rmtree(v_TmpPath)  # Last chance to delete temp, if it does not work, it will throw an exception to the user... we did our best.
-	assert v_TmpPath is not None
-	assert not os.path.exists(v_TmpPath), "Temp folder could not be cleaned: " + str(v_TmpPath)
-	assert v_BuildResult is not None
-	return v_BuildResult
+		assert v_tmp_path is not None
+		assert not os.path.exists(v_tmp_path), "Temp folder could not be cleaned: " + str(v_tmp_path)
+		assert v_build_result is not None
+	return v_build_result
 
 
 if "__main__" == __name__:
-	import sys
 	sys.dont_write_bytecode = True
 	sys.exit(main(sys.argv[1:]))
