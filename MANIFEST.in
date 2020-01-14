@@ -1,5 +1,5 @@
 include LICENSE.txt
 include NAME
-INCLUDE README.md
-INCLUDE README.rst
+include README.md
+include README.rst
 include VERSION
