@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [Released] - 1.0.5 2020-01-14
+
+## Fixed
+- README.rst is now included in source tar
+
 ### Changed
 - Fix mypy lint error '"bool" is invalid as return type for "__exit__" that always returns False'
 - Use mypy Prototype to define "Lockable"
