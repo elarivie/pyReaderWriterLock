@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## Added
+
+- Code coverage badge to README.md using [codecov](https://codecov.io)
+- Download count related badges to README.md
+ - [🎉Wow readerwriterlock is popular🥳](https://blog.pepy.tech/python/packages/stats/2019/12/14/most-popular-python-packages-in-november-2019.html)
+- Added time source in the __init__ of every RWLockable
+
+### Changed
+
+- use by default 'time.perf_counter' instead of 'time.time'
+- Updated support files
+- Source tar file is now reproducible
+
+### Removed
+
+- Removed README.rst since pypi now supports markdown
+
 ## [Released] - 1.0.6 2020-01-14
 
 ## Fixed
@@ -63,7 +80,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     - genRlock ➡ gen_rlock
     - genWlock ➡ gen_wlock
 - make pep257 happy
-- Add lint steps in BUILDME
+- Add lint steps
 - Setup CI with TravisCI
 - Publish as a python package on pypi: [readerwriterlock](https://pypi.python.org/pypi/readerwriterlock)
 

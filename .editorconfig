@@ -13,14 +13,6 @@ end_of_line = crlf
 [*.md]
 trim_trailing_whitespace = false
 
-[*.py]
-
 [*.yml]
 indent_style = space
 indent_size = 2
-
-[BUILDME]
-indent_style = tab
-
-[makefile]
-indent_style = tab

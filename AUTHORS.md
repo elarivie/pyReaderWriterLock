@@ -1,7 +1,12 @@
-Authors
-=======
-We'd like to thank the following people for their contributions.
+Author
+======
+Éric Larivière <ericlariviere@hotmail.com>
+
+Contributors
+============
+
+**Thank you to every contributor**
 
 
-- Éric Larivière <EricLariviere@hotmail.com>
 - Justin Patrin <papercrane@reversefold.com>
+- Éric Larivière <EricLariviere@hotmail.com>

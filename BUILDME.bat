@@ -1,2 +1,0 @@
-python -B BUILDME %*
-EXIT /B %ERRORLEVEL%

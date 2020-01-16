@@ -4,22 +4,27 @@ dist: bionic
 sudo: false
 
 language:
-    - python
+  - python
 
 python:
-    - "3.6"
-    - "3.7"
-    - "3.8"
+  - "3.6"
+  - "3.7"
+  - "3.8"
 
 install:
   - pip install -r requirements.txt
+  - pip install codecov
 
 os:
-    - linux
+  - linux
 
-script: './BUILDME'
+script: 'make all'
 
 notifications:
   email:
     on_success: never
     on_failure: change
+
+after_success:
+  # Push the code coverage result to codecov:
+  - codecov
