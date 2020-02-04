@@ -9,6 +9,7 @@ import threading
 import time
 
 from typing import List
+from typing import Union
 
 from readerwriterlock import rwlock
 
@@ -18,7 +19,8 @@ class TestRWLock(unittest.TestCase):
 
 	def setUp(self) -> None:
 		"""Test setup."""
-		self.c_rwlock_type = (rwlock.RWLockRead, rwlock.RWLockWrite, rwlock.RWLockFair)
+		self.c_rwlock_type_downgradable = (rwlock.RWLockReadD, rwlock.RWLockWriteD, rwlock.RWLockFairD)
+		self.c_rwlock_type = (rwlock.RWLockRead, rwlock.RWLockWrite, rwlock.RWLockFair) + self.c_rwlock_type_downgradable
 
 	def test_multi_thread(self) -> None:
 		"""
@@ -34,15 +36,50 @@ class TestRWLock(unittest.TestCase):
 		for c_curr_lock_type in self.c_rwlock_type:
 			with self.subTest(c_curr_lock_type):
 				print(f"    {c_curr_lock_type} …", end="", flush=True)
-				c_curr_lock = c_curr_lock_type()
+				c_curr_rw_lock: Union[rwlock.RWLockable, rwlock.RWLockableD] = c_curr_lock_type()
 				v_value: int = 0
+
+				def downgrader1() -> None:
+					"""Downgrader using a timeout blocking acquire strategy."""
+					if c_curr_lock_type not in self.c_rwlock_type_downgradable: return
+					try:
+						nonlocal v_value
+						c_enter_time = time.time()
+						while time.time() - c_enter_time <= s_period_sec:
+							c_lock_w1: Union[rwlock.Lockable, rwlock.LockableD] = c_curr_rw_lock.gen_wlock()
+							assert isinstance(c_lock_w1, rwlock.LockableD), type(c_lock_w1)
+							time.sleep(sys.float_info.min)
+							locked: bool = c_lock_w1.acquire(blocking=True, timeout=sys.float_info.min)
+							if locked:
+								try:
+									# Asert like a writer
+									v_temp = v_value
+									v_value += 1
+									self.assertEqual(v_value, (v_temp + 1))
+
+									assert isinstance(c_lock_w1, rwlock.LockableD), c_lock_w1
+									c_lock_w1 = c_lock_w1.downgrade()
+									assert isinstance(c_lock_w1, rwlock.Lockable), c_lock_w1
+
+									# Asert like a reader
+									vv_value: int = v_value
+									time.sleep(sys.float_info.min)
+									self.assertEqual(vv_value, v_value)
+
+									time.sleep(sys.float_info.min)
+								finally:
+									c_lock_w1.release()
+					except BaseException:  # pragma: no cover
+						nonlocal exception_occured
+						exception_occured = True
+						raise
 
 				def writer1() -> None:
 					"""Writer using a no timeout blocking acquire strategy."""
 					try:
 						nonlocal v_value
 						c_enter_time = time.time()
-						c_lock_w1 = c_curr_lock.gen_wlock()
+						c_lock_w1 = c_curr_rw_lock.gen_wlock()
 						while time.time() - c_enter_time <= s_period_sec:
 							time.sleep(sys.float_info.min)
 							with c_lock_w1:
@@ -50,7 +87,7 @@ class TestRWLock(unittest.TestCase):
 								v_value += 1
 								self.assertEqual(v_value, v_temp + 1)
 								time.sleep(sys.float_info.min)
-					except Exception:  # pragma: no cover
+					except BaseException:  # pragma: no cover
 						nonlocal exception_occured
 						exception_occured = True
 						raise
@@ -60,7 +97,7 @@ class TestRWLock(unittest.TestCase):
 					try:
 						nonlocal v_value
 						c_enter_time = time.time()
-						c_lock_w1 = c_curr_lock.gen_wlock()
+						c_lock_w1 = c_curr_rw_lock.gen_wlock()
 						while time.time() - c_enter_time <= s_period_sec:
 							time.sleep(sys.float_info.min)
 							locked: bool
@@ -74,7 +111,7 @@ class TestRWLock(unittest.TestCase):
 							finally:
 								if locked:
 									c_lock_w1.release()
-					except Exception:  # pragma: no cover
+					except BaseException:  # pragma: no cover
 						nonlocal exception_occured
 						exception_occured = True
 						raise
@@ -84,14 +121,14 @@ class TestRWLock(unittest.TestCase):
 					try:
 						nonlocal v_value
 						c_enter_time = time.time()
-						c_lock_r1 = c_curr_lock.gen_rlock()
+						c_lock_r1 = c_curr_rw_lock.gen_rlock()
 						while time.time() - c_enter_time <= s_period_sec:
 							time.sleep(sys.float_info.min)
 							with c_lock_r1:
 								vv_value: int = v_value
 								time.sleep(sys.float_info.min)
 								self.assertEqual(vv_value, v_value)
-					except Exception:  # pragma: no cover
+					except BaseException:  # pragma: no cover
 						nonlocal exception_occured
 						exception_occured = True
 						raise
@@ -101,7 +138,7 @@ class TestRWLock(unittest.TestCase):
 					try:
 						nonlocal v_value
 						c_enter_time = time.time()
-						c_lock_r2 = c_curr_lock.gen_rlock()
+						c_lock_r2 = c_curr_rw_lock.gen_rlock()
 						while time.time() - c_enter_time <= s_period_sec:
 							time.sleep(sys.float_info.min)
 							locked: bool = False
@@ -114,7 +151,7 @@ class TestRWLock(unittest.TestCase):
 							finally:
 								if locked:
 									c_lock_r2.release()
-					except Exception:  # pragma: no cover
+					except BaseException:  # pragma: no cover
 						nonlocal exception_occured
 						exception_occured = True
 						raise
@@ -125,6 +162,7 @@ class TestRWLock(unittest.TestCase):
 					threadsarray.append(threading.Thread(group=None, target=writer2, name=f"writer2 #{i}", daemon=False))
 					threadsarray.append(threading.Thread(group=None, target=reader1, name=f"reader1 #{i}", daemon=False))
 					threadsarray.append(threading.Thread(group=None, target=reader2, name=f"reader2 #{i}", daemon=False))
+					threadsarray.append(threading.Thread(group=None, target=downgrader1, name=f"downgrader1 #{i}", daemon=False))
 				for c_curr_thread in threadsarray:
 					c_curr_thread.start()
 				while threadsarray:
@@ -140,7 +178,8 @@ class TestRWLockSpecificCase(unittest.TestCase):
 
 	def setUp(self) -> None:
 		"""Test setup."""
-		self.c_rwlock_type = (rwlock.RWLockRead, rwlock.RWLockWrite, rwlock.RWLockFair)
+		self.c_rwlock_type_downgradable = (rwlock.RWLockWriteD, rwlock.RWLockFairD, rwlock.RWLockReadD)
+		self.c_rwlock_type = (rwlock.RWLockRead, rwlock.RWLockWrite, rwlock.RWLockFair) + self.c_rwlock_type_downgradable
 
 	def test_write_req00(self) -> None:
 		"""
@@ -397,6 +436,183 @@ class TestRWLockSpecificCase(unittest.TestCase):
 						# ## Clean
 					finally:
 						other_lock.release()
+
+	def test_write_req14(self) -> None:
+		"""
+		# Given: a Downgradable RW lock type to instantiate a RW lock.
+
+		# When: A a generated writer lock successfully acquire its lock.
+
+		# Then: It is possible to downgrade Locked Write to Locked Read.
+		"""
+		# ## Arrange
+		for current_rw_lock_type in self.c_rwlock_type_downgradable:
+			with self.subTest(current_rw_lock_type):
+				current_rw_lock = current_rw_lock_type()
+				assert isinstance(current_rw_lock, rwlock.RWLockableD)
+				current_lock: Union[rwlock.LockableD, rwlock.Lockable] = current_rw_lock.gen_wlock()
+				other_lock = current_rw_lock.gen_rlock()
+
+				self.assertFalse(current_lock.locked())
+				self.assertTrue(current_lock.acquire())
+				self.assertTrue(current_lock.locked())
+				self.assertFalse(other_lock.locked())
+				try:
+					# ## Act
+					self.assertFalse(other_lock.acquire(blocking=False))
+					assert isinstance(current_lock, rwlock.LockableD)
+					current_lock = current_lock.downgrade()
+					self.assertTrue(other_lock.acquire())
+					self.assertTrue(other_lock.locked())
+
+				finally:
+					current_lock.release()
+				try:
+					result = other_lock.acquire(blocking=True, timeout=0.75)
+					# ## Assert
+					self.assertTrue(result)
+					# ## Clean
+				finally:
+					other_lock.release()
+
+	def test_write_req15(self) -> None:
+		"""
+		# Given: a Downgradable RW lock type to instantiate a RW lock.
+
+		# When: A a generated writer lock is downgraed but it wasn't in a locked state.
+
+		# Then: the generated locks raise an exception if released while being unlocked.
+		"""
+		# ## Arrange
+		for current_rw_lock_type in self.c_rwlock_type_downgradable:
+			with self.subTest(current_rw_lock_type):
+				current_rw_lock = current_rw_lock_type()
+				assert isinstance(current_rw_lock, rwlock.RWLockableD)
+				current_lock: Union[rwlock.LockableD] = current_rw_lock.gen_wlock()
+
+				with self.assertRaises(rwlock.RELEASE_ERR_CLS) as err:
+					current_lock.release()
+				self.assertEqual(str(err.exception), str(rwlock.RELEASE_ERR_MSG))
+
+				with self.assertRaises(rwlock.RELEASE_ERR_CLS):
+					# ## Assume
+					self.assertFalse((current_lock.locked()))
+					# ## Act
+					current_lock.downgrade()
+
+				self.assertFalse(current_lock.locked())
+
+
+class TestWhiteBoxRWLockReadD(unittest.TestCase):
+	"""Test RWLockReadD internal specifity."""
+
+	def test_read_vs_downgrade_read(self) -> None:
+		"""
+		# Given: Instance of RWLockReadD.
+
+		# When: A reader lock is acquired OR A writer lock is downgraded.
+
+		# Then: The internal state should be the same.
+		"""
+		# ## Arrange
+		c_rwlock_1 = rwlock.RWLockReadD()
+		c_rwlock_2 = rwlock.RWLockReadD()
+
+		def assert_internal_state():
+			self.assertEqual(int(c_rwlock_1.v_read_count), int(c_rwlock_2.v_read_count))
+			self.assertEqual(bool(c_rwlock_1.c_resource.locked()), bool(c_rwlock_2.c_resource.locked()))
+			self.assertEqual(bool(c_rwlock_1.c_lock_read_count.locked()), bool(c_rwlock_2.c_lock_read_count.locked()))
+		# ## Assume
+		assert_internal_state()
+
+		# ## Act
+		a_read_lock = c_rwlock_1.gen_rlock()
+		a_read_lock.acquire()
+		a_downgrade_lock: Union[rwlock.Lockable, rwlock.LockableD] = c_rwlock_2.gen_wlock()
+		a_downgrade_lock.acquire()
+		assert isinstance(a_downgrade_lock, rwlock.LockableD)
+		a_downgrade_lock = a_downgrade_lock.downgrade()
+		# ## Assert
+		assert_internal_state()
+
+		a_read_lock.release()
+		a_downgrade_lock.release()
+		assert_internal_state()
+
+	def test_read_vs_downgrade_write(self) -> None:
+		"""
+		# Given: Instance of RWLockWriteD.
+
+		# When: A reader lock is acquired OR A writer lock is downgraded.
+
+		# Then: The internal state should be the same.
+		"""
+		# ## Arrange
+		c_rwlock_1 = rwlock.RWLockWriteD()
+		c_rwlock_2 = rwlock.RWLockWriteD()
+
+		def assert_internal_state():
+			self.assertEqual(int(c_rwlock_1.v_read_count), int(c_rwlock_2.v_read_count))
+			self.assertEqual(int(c_rwlock_1.v_write_count), int(c_rwlock_2.v_write_count))
+			self.assertEqual(bool(c_rwlock_1.c_lock_read_count.locked()), bool(c_rwlock_2.c_lock_read_count.locked()))
+			self.assertEqual(bool(c_rwlock_1.c_lock_write_count.locked()), bool(c_rwlock_2.c_lock_write_count.locked()))
+
+			self.assertEqual(bool(c_rwlock_1.c_lock_read_entry.locked()), bool(c_rwlock_2.c_lock_read_entry.locked()))
+			self.assertEqual(bool(c_rwlock_1.c_lock_read_try.locked()), bool(c_rwlock_2.c_lock_read_try.locked()))
+			self.assertEqual(bool(c_rwlock_1.c_resource.locked()), bool(c_rwlock_2.c_resource.locked()))
+
+		# ## Assume
+		assert_internal_state()
+
+		# ## Act
+		a_read_lock = c_rwlock_1.gen_rlock()
+		a_read_lock.acquire()
+		a_downgrade_lock: Union[rwlock.LockableD, rwlock.Lockable] = c_rwlock_2.gen_wlock()
+		a_downgrade_lock.acquire()
+		assert isinstance(a_downgrade_lock, rwlock.LockableD)
+		a_downgrade_lock = a_downgrade_lock.downgrade()
+		# ## Assert
+		assert_internal_state()
+
+		a_read_lock.release()
+		a_downgrade_lock.release()
+		assert_internal_state()
+
+	def test_read_vs_downgrade_fair(self) -> None:
+		"""
+		# Given: Instance of RWLockFairD.
+
+		# When: A reader lock is acquired OR A writer lock is downgraded.
+
+		# Then: The internal state should be the same.
+		"""
+		# ## Arrange
+		c_rwlock_1 = rwlock.RWLockFairD()
+		c_rwlock_2 = rwlock.RWLockFairD()
+
+		def assert_internal_state():
+			"""Assert internal."""
+			self.assertEqual(int(c_rwlock_1.v_read_count), int(c_rwlock_2.v_read_count))
+			self.assertEqual(bool(c_rwlock_1.c_lock_read_count.locked()), bool(c_rwlock_2.c_lock_read_count.locked()))
+			self.assertEqual(bool(c_rwlock_1.c_lock_read.locked()), bool(c_rwlock_2.c_lock_read.locked()))
+			self.assertEqual(bool(c_rwlock_1.c_lock_write.locked()), bool(c_rwlock_2.c_lock_write.locked()))
+
+		# ## Assume
+		assert_internal_state()
+
+		# ## Act
+		a_read_lock = c_rwlock_1.gen_rlock()
+		a_read_lock.acquire()
+		a_downgrade_lock: Union[rwlock.LockableD, rwlock.Lockable] = c_rwlock_2.gen_wlock()
+		a_downgrade_lock.acquire()
+		assert isinstance(a_downgrade_lock, rwlock.LockableD)
+		a_downgrade_lock = a_downgrade_lock.downgrade()
+		# ## Assert
+		assert_internal_state()
+
+		a_read_lock.release()
+		a_downgrade_lock.release()
+		assert_internal_state()
 
 
 if "__main__" == __name__:

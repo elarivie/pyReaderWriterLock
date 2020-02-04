@@ -6,12 +6,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [Released] - 1.0.7 2020-02-05
+
+
 ## Added
 
 - Code coverage badge to README.md using [codecov](https://codecov.io)
 - Download count related badges to README.md
  - [🎉Wow readerwriterlock is popular🥳](https://blog.pepy.tech/python/packages/stats/2019/12/14/most-popular-python-packages-in-november-2019.html)
-- Added time source in the __init__ of every RWLockable
+- Time source in the __init__ of every RWLockable
+- Possibility to downgrade acquired Writer lock -> acquired Reader lock.
 
 ### Changed
 

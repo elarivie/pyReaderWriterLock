@@ -34,28 +34,33 @@ python3 -m pip install -U readerwriterlock
 
 # Usage
 
-Initialize a new lock base on your access priority need which is going to be use by the threads:
+1. Choose a rwlock class base on your access priority need and feature need which is going to be use by the threads:
 
-**Reader priority** (*aka First readers-writers problem*)
+| Priority                                                      | +Speed  | +Downgradable*         |
+|---------------------------------------------------------------|-----------------|---------------|
+| **Reader priority** (*aka First readers-writers problem*)     |   RWLockRead    |  RWLockReadD  |
+| **Writer priority** (*aka Second readers-writers problem*)    |   RWLockWrite   |  RWLockWriteD |
+| **Fair priority** (*aka Third readers-writers problem*)       |   RWLockFair    |  RWLockFairD  |
 
-```python
-from readerwriterlock import rwlock
-a = rwlock.RWLockRead()
-```
+&ast; **Downgradable** feature allows the locks to be atomically downgraded from being locked in write-mode to locked in read-mode
 
-**Writer priority** (*aka Second readers-writers problem*)
+ⓘ Downgradable classes come with a theoretical ~20% negative effect on performance for acquiring and releasing locks.
 
-```python
-from readerwriterlock import rwlock
-a = rwlock.RWLockWrite()
-```
-
-**Fair priority** (*aka Third readers-writers problem*)
+2. Instantiate an instance of the chosen RWLock class:
 
 ```python
 from readerwriterlock import rwlock
-a = rwlock.RWLockFair()
+a = rwlock.RWLockFairD()
 ```
+3. Generate read locks and write locks using the following methods:
+
+```python
+      a_reader_lock = a.gen_rlock()
+
+      a_writer_lock = a.gen_wlock()
+```
+
+4. Use the generated read/write locks to protect section in your code:
 
 ## Pythonic usage example
 
@@ -75,6 +80,19 @@ if b.acquire(blocking=True, timeout=5):
     #Do stuff
   finally:
     b.release()
+```
+
+## Use case (Downgrade) example
+
+```python
+b = a.gen_wlock()
+if b.acquire():
+    try:
+        #Read/Write stuff
+        b = b.downgrade()
+        #Read stuff
+    finally:
+        b.release()
 ```
 
 ## Live example
