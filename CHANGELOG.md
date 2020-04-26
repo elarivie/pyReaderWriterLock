@@ -6,14 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [Released] - 1.0.7 2020-02-05
-
+## [Released] - 1.0.7 2020-04-26
 
 ## Added
 
 - Code coverage badge to README.md using [codecov](https://codecov.io)
 - Download count related badges to README.md
  - [🎉Wow readerwriterlock is popular🥳](https://blog.pepy.tech/python/packages/stats/2019/12/14/most-popular-python-packages-in-november-2019.html)
+ - [🎉Wow readerwriterlock is referenced in a book🥳](https://books.google.ca/books?id=sgyLDwAAQBAJ&pg=PA448&lpg=PA448&dq=python+readerwriterlock&source=bl&ots=yeRTw8hNIg&sig=ACfU3U2i0cmjaFCOagBm914PsCNZTEijjA&hl=fr&sa=X&ved=2ahUKEwi1nqzx2YbpAhVpl3IEHQhgCKY4ChDoATAFegQICRAB#v=onepage&q=python%20readerwriterlock&f=false)
 - Time source in the __init__ of every RWLockable
 - Possibility to downgrade acquired Writer lock -> acquired Reader lock.
 
