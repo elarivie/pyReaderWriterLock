@@ -473,7 +473,7 @@ class RWLockReadD(RWLockableD):
 				wait_blocking = False
 				result.acquire()  # This is a blocking action
 
-			threading.Thread(group=None, target=lock_result, name=f"RWLockReadD_Downgrade", daemon=False).start()
+			threading.Thread(group=None, target=lock_result, name="RWLockReadD_Downgrade", daemon=False).start()
 			while wait_blocking:  # Busy wait for the thread to be almost in its blocking state.
 				time.sleep(sys.float_info.min)
 
