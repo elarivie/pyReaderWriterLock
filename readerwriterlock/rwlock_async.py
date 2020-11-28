@@ -480,7 +480,7 @@ class RWLockReadD(RWLockableD):
 			await wait_blocking.wait() # Wait for the lock to be acquired
 			return result
 
-		def release(self) -> None:
+		async def release(self) -> None:
 			"""Release the lock."""
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.v_locked = False
@@ -520,7 +520,7 @@ class RWLockWriteD(RWLockableD):
 			self.v_locked: bool = False
 			super().__init__()
 
-		def acquire(self) -> bool:
+		async def acquire(self) -> bool:
 			"""Acquire a lock."""
 			if not await self.c_rw_lock.c_lock_read_entry.acquire():
 				return False
@@ -545,7 +545,7 @@ class RWLockWriteD(RWLockableD):
 			self.v_locked = True
 			return True
 
-		def release(self) -> None:
+		async def release(self) -> None:
 			"""Release the lock."""
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.v_locked = False
@@ -565,7 +565,7 @@ class RWLockWriteD(RWLockableD):
 			self.v_locked: bool = False
 			super().__init__()
 
-		def acquire(self) -> bool:
+		async def acquire(self) -> bool:
 			"""Acquire a lock."""
 			if not await self.c_rw_lock.c_lock_write_count.acquire():
 				return False
@@ -586,7 +586,7 @@ class RWLockWriteD(RWLockableD):
 			self.v_locked = True
 			return True
 
-		def downgrade(self) -> Lockable:
+		async def downgrade(self) -> Lockable:
 			"""Downgrade."""
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			await self.c_rw_lock.v_read_count.inc()
@@ -602,7 +602,7 @@ class RWLockWriteD(RWLockableD):
 			result.v_locked = True
 			return result
 
-		def release(self) -> None:
+		async def release(self) -> None:
 			"""Release the lock."""
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.v_locked = False
@@ -625,106 +625,100 @@ class RWLockWriteD(RWLockableD):
 		"""Generate a writer lock."""
 		return RWLockWriteD._aWriter(self)
 
-# TODO: figure out how to implement this in an async model
-# class RWLockFairD(RWLockableD):
-# 	"""A Read/Write lock giving fairness to both Reader and Writer."""
+class RWLockFairD(RWLockableD):
+	"""A Read/Write lock giving fairness to both Reader and Writer."""
 
-# 	def __init__(self, lock_factory: Callable[[], Lockable] = threading.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
-# 		"""Init."""
-# 		raise NotImplementedError("Not implemented yet")
-# 		self.v_read_count: int = 0
-# 		self.c_time_source = time_source
-# 		self.c_lock_read_count = lock_factory()
-# 		self.c_lock_read = lock_factory()
-# 		self.c_lock_write = lock_factory()
-# 		super().__init__()
+	def __init__(self, lock_factory: Callable[[], Lockable] = threading.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
+		"""Init."""
+		self.v_read_count: int = 0
+		self.c_time_source = time_source
+		self.c_lock_read_count = lock_factory()
+		self.c_lock_read = lock_factory()
+		self.c_lock_write = lock_factory()
+		super().__init__()
 
-# 	class _aReader(Lockable):
-# 		def __init__(self, p_RWLock: "RWLockFairD") -> None:
-# 			self.c_rw_lock = p_RWLock
-# 			self.v_locked: bool = False
-# 			super().__init__()
+	class _aReader(Lockable):
+		def __init__(self, p_RWLock: "RWLockFairD") -> None:
+			self.c_rw_lock = p_RWLock
+			self.v_locked: bool = False
+			super().__init__()
 
-# 		def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
-# 			"""Acquire a lock."""
-# 			p_timeout = None if (blocking and timeout < 0) else (timeout if blocking else 0)
-# 			c_deadline = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
-# 			if not self.c_rw_lock.c_lock_read.acquire(blocking=True, timeout=-1 if c_deadline is None else max(0, c_deadline - self.c_rw_lock.c_time_source())):
-# 				return False
-# 			if not self.c_rw_lock.c_lock_read_count.acquire(blocking=True, timeout=-1 if c_deadline is None else max(0, c_deadline - self.c_rw_lock.c_time_source())):
-# 				self.c_rw_lock.c_lock_read.release()
-# 				return False
-# 			self.c_rw_lock.v_read_count += 1
-# 			if 1 == self.c_rw_lock.v_read_count:
-# 				if not self.c_rw_lock.c_lock_write.acquire(blocking=True, timeout=-1 if c_deadline is None else max(0, c_deadline - self.c_rw_lock.c_time_source())):
-# 					self.c_rw_lock.v_read_count -= 1
-# 					self.c_rw_lock.c_lock_read_count.release()
-# 					self.c_rw_lock.c_lock_read.release()
-# 					return False
-# 			self.c_rw_lock.c_lock_read_count.release()
-# 			self.c_rw_lock.c_lock_read.release()
-# 			self.v_locked = True
-# 			return True
+		async def acquire(self) -> bool:
+			"""Acquire a lock."""
+			if not await self.c_rw_lock.c_lock_read.acquire():
+				return False
+			if not await self.c_rw_lock.c_lock_read_count.acquire():
+				self.c_rw_lock.c_lock_read.release()
+				return False
+			self.c_rw_lock.v_read_count += 1
+			if 1 == self.c_rw_lock.v_read_count:
+				if not await self.c_rw_lock.c_lock_write.acquire():
+					self.c_rw_lock.v_read_count -= 1
+					self.c_rw_lock.c_lock_read_count.release()
+					self.c_rw_lock.c_lock_read.release()
+					return False
+			self.c_rw_lock.c_lock_read_count.release()
+			self.c_rw_lock.c_lock_read.release()
+			self.v_locked = True
+			return True
 
-# 		def release(self) -> None:
-# 			"""Release the lock."""
-# 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
-# 			self.v_locked = False
-# 			self.c_rw_lock.c_lock_read_count.acquire()
-# 			self.c_rw_lock.v_read_count -= 1
-# 			if 0 == self.c_rw_lock.v_read_count:
-# 				self.c_rw_lock.c_lock_write.release()
-# 			self.c_rw_lock.c_lock_read_count.release()
+		async def release(self) -> None:
+			"""Release the lock."""
+			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
+			self.v_locked = False
+			async self.c_rw_lock.c_lock_read_count.acquire()
+			self.c_rw_lock.v_read_count -= 1
+			if 0 == self.c_rw_lock.v_read_count:
+				self.c_rw_lock.c_lock_write.release()
+			self.c_rw_lock.c_lock_read_count.release()
 
-# 		def locked(self) -> bool:
-# 			"""Answer to 'is it currently locked?'."""
-# 			return self.v_locked
+		def locked(self) -> bool:
+			"""Answer to 'is it currently locked?'."""
+			return self.v_locked
 
-# 	class _aWriter(LockableD):
-# 		def __init__(self, p_RWLock: "RWLockFairD") -> None:
-# 			self.c_rw_lock = p_RWLock
-# 			self.v_locked: bool = False
-# 			super().__init__()
+	class _aWriter(LockableD):
+		def __init__(self, p_RWLock: "RWLockFairD") -> None:
+			self.c_rw_lock = p_RWLock
+			self.v_locked: bool = False
+			super().__init__()
 
-# 		def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
-# 			"""Acquire a lock."""
-# 			p_timeout = None if (blocking and timeout < 0) else (timeout if blocking else 0)
-# 			c_deadline = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
-# 			if not self.c_rw_lock.c_lock_read.acquire(blocking=True, timeout=-1 if c_deadline is None else max(0, c_deadline - self.c_rw_lock.c_time_source())):
-# 				return False
-# 			if not self.c_rw_lock.c_lock_write.acquire(blocking=True, timeout=-1 if c_deadline is None else max(0, c_deadline - self.c_rw_lock.c_time_source())):
-# 				self.c_rw_lock.c_lock_read.release()
-# 				return False
-# 			self.v_locked = True
-# 			return True
+		async def acquire(self) -> bool:
+			"""Acquire a lock."""
+			if not await self.c_rw_lock.c_lock_read.acquire():
+				return False
+			if not await self.c_rw_lock.c_lock_write.acquire():
+				self.c_rw_lock.c_lock_read.release()
+				return False
+			self.v_locked = True
+			return True
 
-# 		def downgrade(self) -> Lockable:
-# 			"""Downgrade."""
-# 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
-# 			self.c_rw_lock.v_read_count += 1
+		def downgrade(self) -> Lockable:
+			"""Downgrade."""
+			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
+			self.c_rw_lock.v_read_count += 1
 
-# 			self.v_locked = False
-# 			self.c_rw_lock.c_lock_read.release()
+			self.v_locked = False
+			self.c_rw_lock.c_lock_read.release()
 
-# 			result = self.c_rw_lock._aReader(p_RWLock=self.c_rw_lock)
-# 			result.v_locked = True
-# 			return result
+			result = self.c_rw_lock._aReader(p_RWLock=self.c_rw_lock)
+			result.v_locked = True
+			return result
 
-# 		def release(self) -> None:
-# 			"""Release the lock."""
-# 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
-# 			self.v_locked = False
-# 			self.c_rw_lock.c_lock_write.release()
-# 			self.c_rw_lock.c_lock_read.release()
+		def release(self) -> None:
+			"""Release the lock."""
+			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
+			self.v_locked = False
+			self.c_rw_lock.c_lock_write.release()
+			self.c_rw_lock.c_lock_read.release()
 
-# 		def locked(self) -> bool:
-# 			"""Answer to 'is it currently locked?'."""
-# 			return self.v_locked
+		def locked(self) -> bool:
+			"""Answer to 'is it currently locked?'."""
+			return self.v_locked
 
-# 	def gen_rlock(self) -> "RWLockFairD._aReader":
-# 		"""Generate a reader lock."""
-# 		return RWLockFairD._aReader(self)
+	def gen_rlock(self) -> "RWLockFairD._aReader":
+		"""Generate a reader lock."""
+		return RWLockFairD._aReader(self)
 
-# 	def gen_wlock(self) -> "RWLockFairD._aWriter":
-# 		"""Generate a writer lock."""
-# 		return RWLockFairD._aWriter(self)
+	def gen_wlock(self) -> "RWLockFairD._aWriter":
+		"""Generate a writer lock."""
+		return RWLockFairD._aWriter(self)
