@@ -32,7 +32,7 @@ else:
 class Lockable(Protocol):
 	"""Lockable.  Compatible with threading.Lock interface."""
 
-	async def acquire(self) -> bool:
+	async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 		"""Acquire a lock."""
 		raise AssertionError("Should be overriden")  # Will be overriden.  # pragma: no cover
 
@@ -142,13 +142,19 @@ class RWLockRead(RWLockable):
 			self.v_locked: bool = False
 			super().__init__()
 
-		async def acquire(self) -> bool:
+		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
-			if not await self.c_rw_lock.c_lock_read_count.acquire():
+			p_timeout: Optional[float] = None if (blocking and timeout < 0) else (timeout if blocking else 0)
+			c_deadline: Optional[float] = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read_count.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				return False
 			self.c_rw_lock.v_read_count += 1
 			if 1 == self.c_rw_lock.v_read_count:
-				if not await self.c_rw_lock.c_resource.acquire():
+				try:
+					await asyncio.wait_for(self.c_rw_lock.c_resource.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+				except asyncio.TimeoutError:
 					self.c_rw_lock.v_read_count -= 1
 					self.c_rw_lock.c_lock_read_count.release()
 					return False
@@ -176,9 +182,15 @@ class RWLockRead(RWLockable):
 			self.v_locked: bool = False
 			super().__init__()
 
-		async def acquire(self) -> bool:
+		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
-			locked: bool = await self.c_rw_lock.c_resource.acquire()
+			p_timeout: Optional[float] = None if (blocking and timeout < 0) else (timeout if blocking else 0)
+			c_deadline: Optional[float] = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_resource.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+				locked: bool = True
+			except asyncio.TimeoutError:
+				locked: bool = False
 			self.v_locked = locked
 			return locked
 
@@ -222,20 +234,30 @@ class RWLockWrite(RWLockable):
 			self.v_locked: bool = False
 			super().__init__()
 
-		async def acquire(self) -> bool:
+		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
-			if not await self.c_rw_lock.c_lock_read_entry.acquire():
+			p_timeout = None if (blocking and timeout < 0) else (timeout if blocking else 0)
+			c_deadline = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read_entry.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				return False
-			if not await self.c_rw_lock.c_lock_read_try.acquire():
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read_try.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				self.c_rw_lock.c_lock_read_entry.release()
 				return False
-			if not await self.c_rw_lock.c_lock_read_count.acquire():
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read_count.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				self.c_rw_lock.c_lock_read_try.release()
 				self.c_rw_lock.c_lock_read_entry.release()
 				return False
 			self.c_rw_lock.v_read_count += 1
 			if 1 == self.c_rw_lock.v_read_count:
-				if not await self.c_rw_lock.c_resource.acquire():
+				try:
+					await asyncio.wait_for(self.c_rw_lock.c_resource.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+				except asyncio.TimeoutError:
 					self.c_rw_lock.c_lock_read_try.release()
 					self.c_rw_lock.c_lock_read_entry.release()
 					self.c_rw_lock.v_read_count -= 1
@@ -267,18 +289,26 @@ class RWLockWrite(RWLockable):
 			self.v_locked: bool = False
 			super().__init__()
 
-		async def acquire(self) -> bool:
+		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
-			if not await self.c_rw_lock.c_lock_write_count.acquire():
+			p_timeout = None if (blocking and timeout < 0) else (timeout if blocking else 0)
+			c_deadline = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_write_count.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				return False
 			self.c_rw_lock.v_write_count += 1
 			if 1 == int(self.c_rw_lock.v_write_count):
-				if not await self.c_rw_lock.c_lock_read_try.acquire():
+				try:
+					await asyncio.wait_for(self.c_rw_lock.c_lock_read_try.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+				except asyncio.TimeoutError:
 					self.c_rw_lock.v_write_count -= 1
 					self.c_rw_lock.c_lock_write_count.release()
 					return False
 			self.c_rw_lock.c_lock_write_count.release()
-			if not await self.c_rw_lock.c_resource.acquire():
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_resource.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				await self.c_rw_lock.c_lock_write_count.acquire()
 				self.c_rw_lock.v_write_count -= 1
 				if 0 == int(self.c_rw_lock.v_write_count):
@@ -330,16 +360,24 @@ class RWLockFair(RWLockable):
 			self.v_locked: bool = False
 			super().__init__()
 
-		async def acquire(self) -> bool:
+		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
-			if not await self.c_rw_lock.c_lock_read.acquire():
+			p_timeout = None if (blocking and timeout < 0) else (timeout if blocking else 0)
+			c_deadline = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				return False
-			if not await self.c_rw_lock.c_lock_read_count.acquire():
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read_count.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				self.c_rw_lock.c_lock_read.release()
 				return False
 			self.c_rw_lock.v_read_count += 1
 			if 1 == self.c_rw_lock.v_read_count:
-				if not await self.c_rw_lock.c_lock_write.acquire():
+				try:
+					await asyncio.wait_for(self.c_rw_lock.c_lock_write.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+				except asyncio.TimeoutError:
 					self.c_rw_lock.v_read_count -= 1
 					self.c_rw_lock.c_lock_read_count.release()
 					self.c_rw_lock.c_lock_read.release()
@@ -369,11 +407,17 @@ class RWLockFair(RWLockable):
 			self.v_locked: bool = False
 			super().__init__()
 
-		async def acquire(self) -> bool:
+		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
-			if not await self.c_rw_lock.c_lock_read.acquire():
+			p_timeout = None if (blocking and timeout < 0) else (timeout if blocking else 0)
+			c_deadline = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				return False
-			if not await self.c_rw_lock.c_lock_write.acquire():
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_write.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				self.c_rw_lock.c_lock_read.release()
 				return False
 			self.v_locked = True
@@ -415,13 +459,19 @@ class RWLockReadD(RWLockableD):
 			self.v_locked: bool = False
 			super().__init__()
 
-		async def acquire(self) -> bool:
+		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
-			if not await self.c_rw_lock.c_lock_read_count.acquire():
+			p_timeout: Optional[float] = None if (blocking and timeout < 0) else (timeout if blocking else 0)
+			c_deadline: Optional[float] = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read_count.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				return False
 			await self.c_rw_lock.v_read_count.inc()
 			if 1 == int(self.c_rw_lock.v_read_count):
-				if not await self.c_rw_lock.c_resource.acquire():
+				try:
+					await asyncio.wait_for(self.c_rw_lock.c_resource.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+				except asyncio.TimeoutError:
 					await self.c_rw_lock.v_read_count.dec()
 					self.c_rw_lock.c_lock_read_count.release()
 					return False
@@ -449,9 +499,16 @@ class RWLockReadD(RWLockableD):
 			self.v_locked: bool = False
 			super().__init__()
 
-		async def acquire(self) -> bool:
+		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
-			locked: bool = await self.c_rw_lock.c_resource.acquire()
+			p_timeout: Optional[float] = None if (blocking and timeout < 0) else (timeout if blocking else 0)
+			c_deadline: Optional[float] = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_resource.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+				locked: bool = True
+			except asyncio.TimeoutError:
+				locked: bool = False
+			 
 			self.v_locked = locked
 			return locked
 
@@ -519,20 +576,30 @@ class RWLockWriteD(RWLockableD):
 			self.v_locked: bool = False
 			super().__init__()
 
-		async def acquire(self) -> bool:
+		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
-			if not await self.c_rw_lock.c_lock_read_entry.acquire():
+			p_timeout = None if (blocking and timeout < 0) else (timeout if blocking else 0)
+			c_deadline = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read_entry.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				return False
-			if not await self.c_rw_lock.c_lock_read_try.acquire():
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read_try.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				self.c_rw_lock.c_lock_read_entry.release()
 				return False
-			if not await self.c_rw_lock.c_lock_read_count.acquire():
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read_count.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				self.c_rw_lock.c_lock_read_try.release()
 				self.c_rw_lock.c_lock_read_entry.release()
 				return False
 			await self.c_rw_lock.v_read_count.inc()
 			if 1 == int(self.c_rw_lock.v_read_count):
-				if not await self.c_rw_lock.c_resource.acquire():
+				try:
+					await asyncio.wait_for(self.c_rw_lock.c_resource.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+				except asyncio.TimeoutError:
 					self.c_rw_lock.c_lock_read_try.release()
 					self.c_rw_lock.c_lock_read_entry.release()
 					await self.c_rw_lock.v_read_count.dec()
@@ -564,18 +631,26 @@ class RWLockWriteD(RWLockableD):
 			self.v_locked: bool = False
 			super().__init__()
 
-		async def acquire(self) -> bool:
+		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
-			if not await self.c_rw_lock.c_lock_write_count.acquire():
+			p_timeout = None if (blocking and timeout < 0) else (timeout if blocking else 0)
+			c_deadline = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_write_count.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				return False
 			self.c_rw_lock.v_write_count += 1
 			if 1 == self.c_rw_lock.v_write_count:
-				if not await self.c_rw_lock.c_lock_read_try.acquire():
+				try:
+					await asyncio.wait_for(self.c_rw_lock.c_lock_read_try.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+				except asyncio.TimeoutError:
 					self.c_rw_lock.v_write_count -= 1
 					self.c_rw_lock.c_lock_write_count.release()
 					return False
 			self.c_rw_lock.c_lock_write_count.release()
-			if not await self.c_rw_lock.c_resource.acquire():
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_resource.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				await self.c_rw_lock.c_lock_write_count.acquire()
 				self.c_rw_lock.v_write_count -= 1
 				if 0 == self.c_rw_lock.v_write_count:
@@ -642,16 +717,24 @@ class RWLockFairD(RWLockableD):
 			self.v_locked: bool = False
 			super().__init__()
 
-		async def acquire(self) -> bool:
+		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
-			if not await self.c_rw_lock.c_lock_read.acquire():
+			p_timeout = None if (blocking and timeout < 0) else (timeout if blocking else 0)
+			c_deadline = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				return False
-			if not await self.c_rw_lock.c_lock_read_count.acquire():
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read_count.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				self.c_rw_lock.c_lock_read.release()
 				return False
 			self.c_rw_lock.v_read_count += 1
 			if 1 == self.c_rw_lock.v_read_count:
-				if not await self.c_rw_lock.c_lock_write.acquire():
+				try:
+					await asyncio.wait_for(self.c_rw_lock.c_lock_write.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+				except asyncio.TimeoutError:
 					self.c_rw_lock.v_read_count -= 1
 					self.c_rw_lock.c_lock_read_count.release()
 					self.c_rw_lock.c_lock_read.release()
@@ -681,11 +764,17 @@ class RWLockFairD(RWLockableD):
 			self.v_locked: bool = False
 			super().__init__()
 
-		async def acquire(self) -> bool:
+		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
-			if not await self.c_rw_lock.c_lock_read.acquire():
+			p_timeout = None if (blocking and timeout < 0) else (timeout if blocking else 0)
+			c_deadline = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_read.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				return False
-			if not await self.c_rw_lock.c_lock_write.acquire():
+			try:
+				await asyncio.wait_for(self.c_rw_lock.c_lock_write.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
+			except asyncio.TimeoutError:
 				self.c_rw_lock.c_lock_read.release()
 				return False
 			self.v_locked = True
