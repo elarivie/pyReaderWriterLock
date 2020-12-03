@@ -99,6 +99,7 @@ class _ThreadSafeInt():
 		"""Self -= other."""
 		raise DeprecationWarning("To be removed")
 
+
 @runtime_checkable
 class RWLockable(Protocol):
 	"""Read/write lock."""
@@ -442,6 +443,7 @@ class RWLockFair(RWLockable):
 		"""Generate a writer lock."""
 		return RWLockFair._aWriter(self)
 
+
 class RWLockReadD(RWLockableD):
 	"""A Read/Write lock giving preference to Reader."""
 
@@ -508,7 +510,7 @@ class RWLockReadD(RWLockableD):
 				locked: bool = True
 			except asyncio.TimeoutError:
 				locked: bool = False
-			 
+
 			self.v_locked = locked
 			return locked
 
@@ -528,13 +530,13 @@ class RWLockReadD(RWLockableD):
 			run_task(lock_result())
 
 			await wait_blocking.wait()  # Wait for the thread to be almost in its blocking state.
-			wait_blocking.clear() # TODO is this needed?
+			wait_blocking.clear()  # TODO is this needed?
 
 			await asyncio.sleep(sys.float_info.min * 123)  # Heuristic sleep delay to leave some extra time for the thread to block.
 
 			await self.release()  # Open the gate! the current RW lock strategy gives priority to reader, therefore the result will acquire lock before any other writer lock.
 
-			await wait_blocking.wait() # Wait for the lock to be acquired
+			await wait_blocking.wait()  # Wait for the lock to be acquired
 			return result
 
 		async def release(self) -> None:
@@ -554,6 +556,7 @@ class RWLockReadD(RWLockableD):
 	def gen_wlock(self) -> "RWLockReadD._aWriter":
 		"""Generate a writer lock."""
 		return RWLockReadD._aWriter(self)
+
 
 class RWLockWriteD(RWLockableD):
 	"""A Read/Write lock giving preference to Writer."""
@@ -698,6 +701,7 @@ class RWLockWriteD(RWLockableD):
 	def gen_wlock(self) -> "RWLockWriteD._aWriter":
 		"""Generate a writer lock."""
 		return RWLockWriteD._aWriter(self)
+
 
 class RWLockFairD(RWLockableD):
 	"""A Read/Write lock giving fairness to both Reader and Writer."""
