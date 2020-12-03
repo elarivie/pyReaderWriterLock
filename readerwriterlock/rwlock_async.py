@@ -44,14 +44,14 @@ class Lockable(Protocol):
 		"""Answer to 'is it currently locked?'."""
 		raise AssertionError("Should be overriden")  # Will be overriden.  # pragma: no cover
 
-	async def __enter__(self) -> bool:
+	async def __aenter__(self) -> bool:
 		"""Enter context manager."""
-		self.acquire()
+		await self.acquire()
 		return False
 
-	async def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> Optional[bool]:  # type: ignore
+	async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> Optional[bool]:  # type: ignore
 		"""Exit context manager."""
-		self.release()
+		await self.release()
 		return False
 
 
@@ -182,7 +182,7 @@ class RWLockRead(RWLockable):
 			self.v_locked = locked
 			return locked
 
-		def release(self) -> None:
+		async def release(self) -> None:
 			"""Release the lock."""
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.v_locked = False
@@ -252,7 +252,7 @@ class RWLockWrite(RWLockable):
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.v_locked = False
 			await self.c_rw_lock.c_lock_read_count.acquire()
-			await self.c_rw_lock.v_read_count.dec()
+			self.c_rw_lock.v_read_count -= 1
 			if 0 == self.c_rw_lock.v_read_count:
 				self.c_rw_lock.c_resource.release()
 			self.c_rw_lock.c_lock_read_count.release()
@@ -271,16 +271,16 @@ class RWLockWrite(RWLockable):
 			"""Acquire a lock."""
 			if not await self.c_rw_lock.c_lock_write_count.acquire():
 				return False
-			await self.c_rw_lock.v_write_count.inc()
+			self.c_rw_lock.v_write_count += 1
 			if 1 == int(self.c_rw_lock.v_write_count):
 				if not await self.c_rw_lock.c_lock_read_try.acquire():
-					await self.c_rw_lock.v_write_count.dec()
+					self.c_rw_lock.v_write_count -= 1
 					self.c_rw_lock.c_lock_write_count.release()
 					return False
 			self.c_rw_lock.c_lock_write_count.release()
 			if not await self.c_rw_lock.c_resource.acquire():
 				await self.c_rw_lock.c_lock_write_count.acquire()
-				await self.c_rw_lock.v_write_count.dec()
+				self.c_rw_lock.v_write_count -= 1
 				if 0 == int(self.c_rw_lock.v_write_count):
 					self.c_rw_lock.c_lock_read_try.release()
 				self.c_rw_lock.c_lock_write_count.release()
@@ -294,7 +294,7 @@ class RWLockWrite(RWLockable):
 			self.v_locked = False
 			self.c_rw_lock.c_resource.release()
 			await self.c_rw_lock.c_lock_write_count.acquire()
-			await self.c_rw_lock.v_write_count.dec()
+			self.c_rw_lock.v_write_count -= 1
 			if 0 == int(self.c_rw_lock.v_write_count):
 				self.c_rw_lock.c_lock_read_try.release()
 			self.c_rw_lock.c_lock_write_count.release()
@@ -379,7 +379,7 @@ class RWLockFair(RWLockable):
 			self.v_locked = True
 			return True
 
-		def release(self) -> None:
+		async def release(self) -> None:
 			"""Release the lock."""
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.v_locked = False
@@ -475,7 +475,7 @@ class RWLockReadD(RWLockableD):
 
 			await asyncio.sleep(sys.float_info.min * 123)  # Heuristic sleep delay to leave some extra time for the thread to block.
 
-			self.release()  # Open the gate! the current RW lock strategy gives priority to reader, therefore the result will acquire lock before any other writer lock.
+			await self.release()  # Open the gate! the current RW lock strategy gives priority to reader, therefore the result will acquire lock before any other writer lock.
 
 			await wait_blocking.wait() # Wait for the lock to be acquired
 			return result
@@ -501,9 +501,8 @@ class RWLockReadD(RWLockableD):
 class RWLockWriteD(RWLockableD):
 	"""A Read/Write lock giving preference to Writer."""
 
-	def __init__(self, lock_factory: Callable[[], Lockable] = threading.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
+	def __init__(self, lock_factory: Callable[[], Lockable] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
 		"""Init."""
-		raise NotImplementedError("Not implemented yet")
 		self.v_read_count: _ThreadSafeInt = _ThreadSafeInt(lock_factory=lock_factory, initial_value=0)
 		self.v_write_count: int = 0
 		self.c_time_source = time_source
@@ -628,7 +627,7 @@ class RWLockWriteD(RWLockableD):
 class RWLockFairD(RWLockableD):
 	"""A Read/Write lock giving fairness to both Reader and Writer."""
 
-	def __init__(self, lock_factory: Callable[[], Lockable] = threading.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
+	def __init__(self, lock_factory: Callable[[], Lockable] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
 		"""Init."""
 		self.v_read_count: int = 0
 		self.c_time_source = time_source
@@ -666,7 +665,7 @@ class RWLockFairD(RWLockableD):
 			"""Release the lock."""
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.v_locked = False
-			async self.c_rw_lock.c_lock_read_count.acquire()
+			await self.c_rw_lock.c_lock_read_count.acquire()
 			self.c_rw_lock.v_read_count -= 1
 			if 0 == self.c_rw_lock.v_read_count:
 				self.c_rw_lock.c_lock_write.release()
@@ -692,7 +691,7 @@ class RWLockFairD(RWLockableD):
 			self.v_locked = True
 			return True
 
-		def downgrade(self) -> Lockable:
+		async def downgrade(self) -> Lockable:
 			"""Downgrade."""
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.c_rw_lock.v_read_count += 1
@@ -704,7 +703,7 @@ class RWLockFairD(RWLockableD):
 			result.v_locked = True
 			return result
 
-		def release(self) -> None:
+		async def release(self) -> None:
 			"""Release the lock."""
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.v_locked = False
