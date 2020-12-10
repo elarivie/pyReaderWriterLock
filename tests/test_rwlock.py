@@ -479,7 +479,7 @@ class TestRWLockSpecificCase(unittest.TestCase):
 		"""
 		# Given: a Downgradable RW lock type to instantiate a RW lock.
 
-		# When: A a generated writer lock is downgraed but it wasn't in a locked state.
+		# When: A a generated writer lock is downgrade but it wasn't in a locked state.
 
 		# Then: the generated locks raise an exception if released while being unlocked.
 		"""
