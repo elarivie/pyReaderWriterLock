@@ -83,21 +83,13 @@ class _ThreadSafeInt():
 		"""Self == other."""
 		return int(self) == other
 
-	async def inc(self):
+	async def increment(self):
 		async with self.__value_lock:
 			self.__value += 1
 
-	async def dec(self):
+	async def decrement(self):
 		async with self.__value_lock:
 			self.__value -= 1
-
-	def __iadd__(self, other) -> "_ThreadSafeInt":
-		"""Self += other."""
-		raise DeprecationWarning("To be removed")
-
-	def __isub__(self, other) -> "_ThreadSafeInt":
-		"""Self -= other."""
-		raise DeprecationWarning("To be removed")
 
 
 @runtime_checkable
@@ -469,12 +461,12 @@ class RWLockReadD(RWLockableD):
 				await asyncio.wait_for(self.c_rw_lock.c_lock_read_count.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
 			except asyncio.TimeoutError:
 				return False
-			await self.c_rw_lock.v_read_count.inc()
+			await self.c_rw_lock.v_read_count.increment()
 			if 1 == int(self.c_rw_lock.v_read_count):
 				try:
 					await asyncio.wait_for(self.c_rw_lock.c_resource.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
 				except asyncio.TimeoutError:
-					await self.c_rw_lock.v_read_count.dec()
+					await self.c_rw_lock.v_read_count.decrement()
 					self.c_rw_lock.c_lock_read_count.release()
 					return False
 			self.c_rw_lock.c_lock_read_count.release()
@@ -486,7 +478,7 @@ class RWLockReadD(RWLockableD):
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.v_locked = False
 			await self.c_rw_lock.c_lock_read_count.acquire()
-			await self.c_rw_lock.v_read_count.dec()
+			await self.c_rw_lock.v_read_count.decrement()
 			if 0 == int(self.c_rw_lock.v_read_count):
 				self.c_rw_lock.c_resource.release()
 			self.c_rw_lock.c_lock_read_count.release()
@@ -530,7 +522,7 @@ class RWLockReadD(RWLockableD):
 			run_task(lock_result())
 
 			await wait_blocking.wait()  # Wait for the thread to be almost in its blocking state.
-			wait_blocking.clear()  # TODO is this needed?
+			wait_blocking.clear()
 
 			await asyncio.sleep(sys.float_info.min * 123)  # Heuristic sleep delay to leave some extra time for the thread to block.
 
@@ -598,14 +590,14 @@ class RWLockWriteD(RWLockableD):
 				self.c_rw_lock.c_lock_read_try.release()
 				self.c_rw_lock.c_lock_read_entry.release()
 				return False
-			await self.c_rw_lock.v_read_count.inc()
+			await self.c_rw_lock.v_read_count.increment()
 			if 1 == int(self.c_rw_lock.v_read_count):
 				try:
 					await asyncio.wait_for(self.c_rw_lock.c_resource.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
 				except asyncio.TimeoutError:
 					self.c_rw_lock.c_lock_read_try.release()
 					self.c_rw_lock.c_lock_read_entry.release()
-					await self.c_rw_lock.v_read_count.dec()
+					await self.c_rw_lock.v_read_count.decrement()
 					self.c_rw_lock.c_lock_read_count.release()
 					return False
 			self.c_rw_lock.c_lock_read_count.release()
@@ -619,7 +611,7 @@ class RWLockWriteD(RWLockableD):
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.v_locked = False
 			await self.c_rw_lock.c_lock_read_count.acquire()
-			await self.c_rw_lock.v_read_count.dec()
+			await self.c_rw_lock.v_read_count.decrement()
 			if 0 == int(self.c_rw_lock.v_read_count):
 				self.c_rw_lock.c_resource.release()
 			self.c_rw_lock.c_lock_read_count.release()
@@ -666,7 +658,7 @@ class RWLockWriteD(RWLockableD):
 		async def downgrade(self) -> Lockable:
 			"""Downgrade."""
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
-			await self.c_rw_lock.v_read_count.inc()
+			await self.c_rw_lock.v_read_count.increment()
 
 			self.v_locked = False
 			await self.c_rw_lock.c_lock_write_count.acquire()
