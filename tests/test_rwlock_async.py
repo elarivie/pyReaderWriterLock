@@ -104,7 +104,7 @@ class TestRWLock_Async(unittest.TestCase):
 								await asyncio.sleep(sys.float_info.min)
 								locked: bool
 								try:
-									locked = await c_lock_w1.acquire(blocking=True, timeout=sys.float_info.min)
+									locked = await c_lock_w1.acquire(blocking=True, timeout=0.1)
 									if locked:
 										v_temp = v_value
 										v_value += 1
@@ -145,7 +145,7 @@ class TestRWLock_Async(unittest.TestCase):
 								await asyncio.sleep(sys.float_info.min)
 								locked: bool = False
 								try:
-									locked = await c_lock_r2.acquire(blocking=True, timeout=sys.float_info.min)
+									locked = await c_lock_r2.acquire(blocking=True, timeout=0.1)
 									if locked:
 										vv_value: int = v_value
 										await asyncio.sleep(sys.float_info.min)
