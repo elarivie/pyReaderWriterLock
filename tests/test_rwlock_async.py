@@ -11,7 +11,7 @@ import asyncio
 from typing import List
 from typing import Union
 
-from readerwriterlock import rwlock_async as rwlock
+from readerwriterlock import rwlock_async
 
 
 class TestRWLock_Async(unittest.TestCase):
@@ -19,8 +19,8 @@ class TestRWLock_Async(unittest.TestCase):
 
 	def setUp(self) -> None:
 		"""Test setup."""
-		self.c_rwlock_type_downgradable = (rwlock.RWLockReadD, rwlock.RWLockWriteD, rwlock.RWLockFairD)
-		self.c_rwlock_type = (rwlock.RWLockRead, rwlock.RWLockWrite, rwlock.RWLockFair) + self.c_rwlock_type_downgradable
+		self.c_rwlock_type_downgradable = (rwlock_async.RWLockReadD, rwlock_async.RWLockWriteD, rwlock_async.RWLockFairD)
+		self.c_rwlock_type = (rwlock_async.RWLockRead, rwlock_async.RWLockWrite, rwlock_async.RWLockFair) + self.c_rwlock_type_downgradable
 
 	def test_multi_async(self) -> None:
 		"""
@@ -37,7 +37,7 @@ class TestRWLock_Async(unittest.TestCase):
 			for c_curr_lock_type in self.c_rwlock_type:
 				with self.subTest(c_curr_lock_type):
 					print(f"    {c_curr_lock_type} …", end="", flush=True)
-					c_curr_rw_lock: Union[rwlock.RWLockable, rwlock.RWLockableD] = c_curr_lock_type()
+					c_curr_rw_lock: Union[rwlock_async.RWLockable, rwlock_async.RWLockableD] = c_curr_lock_type()
 					v_value: int = 0
 
 					async def downgrader1() -> None:
@@ -47,8 +47,8 @@ class TestRWLock_Async(unittest.TestCase):
 							nonlocal v_value
 							c_enter_time = time.time()
 							while time.time() - c_enter_time <= s_period_sec:
-								c_lock_w1: Union[rwlock.Lockable, rwlock.LockableD] = c_curr_rw_lock.gen_wlock()
-								assert isinstance(c_lock_w1, rwlock.LockableD), type(c_lock_w1)
+								c_lock_w1: Union[rwlock_async.Lockable, rwlock_async.LockableD] = c_curr_rw_lock.gen_wlock()
+								assert isinstance(c_lock_w1, rwlock_async.LockableD), type(c_lock_w1)
 
 								await asyncio.sleep(sys.float_info.min)
 
@@ -60,9 +60,9 @@ class TestRWLock_Async(unittest.TestCase):
 										v_value += 1
 										self.assertEqual(v_value, (v_temp + 1))
 
-										assert isinstance(c_lock_w1, rwlock.LockableD), c_lock_w1
+										assert isinstance(c_lock_w1, rwlock_async.LockableD), c_lock_w1
 										c_lock_w1 = await c_lock_w1.downgrade()
-										assert isinstance(c_lock_w1, rwlock.Lockable), c_lock_w1
+										assert isinstance(c_lock_w1, rwlock_async.Lockable), c_lock_w1
 										# Assert like a reader
 										vv_value: int = v_value
 										await asyncio.sleep(sys.float_info.min)
@@ -177,8 +177,8 @@ class TestRWLockSpecificCase(unittest.TestCase):
 
 	def setUp(self) -> None:
 		"""Test setup."""
-		self.c_rwlock_type_downgradable = (rwlock.RWLockWriteD, rwlock.RWLockFairD, rwlock.RWLockReadD)
-		self.c_rwlock_type = (rwlock.RWLockRead, rwlock.RWLockWrite, rwlock.RWLockFair) + self.c_rwlock_type_downgradable
+		self.c_rwlock_type_downgradable = (rwlock_async.RWLockWriteD, rwlock_async.RWLockFairD, rwlock_async.RWLockReadD)
+		self.c_rwlock_type = (rwlock_async.RWLockRead, rwlock_async.RWLockWrite, rwlock_async.RWLockFair) + self.c_rwlock_type_downgradable
 
 	def test_write_req00(self) -> None:
 		"""
@@ -226,7 +226,7 @@ class TestRWLockSpecificCase(unittest.TestCase):
 				# ## Act
 				result = current_rw_lock_type().gen_rlock()
 				# ## Assert
-				self.assertIsInstance(result, rwlock.Lockable)
+				self.assertIsInstance(result, rwlock_async.Lockable)
 				self.assertFalse(result.locked())
 
 	def test_write_req03(self) -> None:
@@ -243,7 +243,7 @@ class TestRWLockSpecificCase(unittest.TestCase):
 				# ## Act
 				result = current_rw_lock_type().gen_wlock()
 				# ## Assert
-				self.assertIsInstance(result, rwlock.Lockable)
+				self.assertIsInstance(result, rwlock_async.Lockable)
 				self.assertFalse(result.locked())
 
 	def test_write_req04(self) -> None:
@@ -481,8 +481,8 @@ class TestRWLockSpecificCase(unittest.TestCase):
 			with self.subTest(current_rw_lock_type):
 				async def try_lock():
 					current_rw_lock = current_rw_lock_type()
-					assert isinstance(current_rw_lock, rwlock.RWLockableD)
-					current_lock: Union[rwlock.LockableD, rwlock.Lockable] = current_rw_lock.gen_wlock()
+					assert isinstance(current_rw_lock, rwlock_async.RWLockableD)
+					current_lock: Union[rwlock_async.LockableD, rwlock_async.Lockable] = current_rw_lock.gen_wlock()
 					other_lock = current_rw_lock.gen_rlock()
 
 					self.assertFalse(current_lock.locked())
@@ -492,7 +492,7 @@ class TestRWLockSpecificCase(unittest.TestCase):
 					try:
 						# ## Act
 						self.assertFalse(await other_lock.acquire(blocking=False))
-						assert isinstance(current_lock, rwlock.LockableD)
+						assert isinstance(current_lock, rwlock_async.LockableD)
 						current_lock = await current_lock.downgrade()
 						self.assertTrue(await other_lock.acquire())
 						self.assertTrue(other_lock.locked())
@@ -522,14 +522,14 @@ class TestRWLockSpecificCase(unittest.TestCase):
 			with self.subTest(current_rw_lock_type):
 				async def try_lock():
 					current_rw_lock = current_rw_lock_type()
-					assert isinstance(current_rw_lock, rwlock.RWLockableD)
-					current_lock: Union[rwlock.LockableD] = current_rw_lock.gen_wlock()
+					assert isinstance(current_rw_lock, rwlock_async.RWLockableD)
+					current_lock: Union[rwlock_async.LockableD] = current_rw_lock.gen_wlock()
 
-					with self.assertRaises(rwlock.RELEASE_ERR_CLS) as err:
+					with self.assertRaises(rwlock_async.RELEASE_ERR_CLS) as err:
 						await current_lock.release()
-					self.assertEqual(str(err.exception), str(rwlock.RELEASE_ERR_MSG))
+					self.assertEqual(str(err.exception), str(rwlock_async.RELEASE_ERR_MSG))
 
-					with self.assertRaises(rwlock.RELEASE_ERR_CLS):
+					with self.assertRaises(rwlock_async.RELEASE_ERR_CLS):
 						# ## Assume
 						self.assertFalse((current_lock.locked()))
 						# ## Act
@@ -550,8 +550,8 @@ class TestWhiteBoxRWLockReadD(unittest.TestCase):
 		# Then: The internal state should be the same.
 		"""
 		# ## Arrange
-		c_rwlock_1 = rwlock.RWLockReadD()
-		c_rwlock_2 = rwlock.RWLockReadD()
+		c_rwlock_1 = rwlock_async.RWLockReadD()
+		c_rwlock_2 = rwlock_async.RWLockReadD()
 		eloop = asyncio.get_event_loop()
 
 		def assert_internal_state():
@@ -565,9 +565,9 @@ class TestWhiteBoxRWLockReadD(unittest.TestCase):
 		async def try_lock():
 			a_read_lock = c_rwlock_1.gen_rlock()
 			await a_read_lock.acquire()
-			a_downgrade_lock: Union[rwlock.Lockable, rwlock.LockableD] = c_rwlock_2.gen_wlock()
+			a_downgrade_lock: Union[rwlock_async.Lockable, rwlock_async.LockableD] = c_rwlock_2.gen_wlock()
 			await a_downgrade_lock.acquire()
-			self.assertIsInstance(a_downgrade_lock, rwlock.LockableD)
+			self.assertIsInstance(a_downgrade_lock, rwlock_async.LockableD)
 			a_downgrade_lock = await a_downgrade_lock.downgrade()
 			# ## Assert
 			assert_internal_state()
@@ -586,8 +586,8 @@ class TestWhiteBoxRWLockReadD(unittest.TestCase):
 		# Then: The internal state should be the same.
 		"""
 		# ## Arrange
-		c_rwlock_1 = rwlock.RWLockWriteD()
-		c_rwlock_2 = rwlock.RWLockWriteD()
+		c_rwlock_1 = rwlock_async.RWLockWriteD()
+		c_rwlock_2 = rwlock_async.RWLockWriteD()
 		eloop = asyncio.get_event_loop()
 
 		def assert_internal_state():
@@ -607,9 +607,9 @@ class TestWhiteBoxRWLockReadD(unittest.TestCase):
 		async def try_lock():
 			a_read_lock = c_rwlock_1.gen_rlock()
 			await a_read_lock.acquire()
-			a_downgrade_lock: Union[rwlock.LockableD, rwlock.Lockable] = c_rwlock_2.gen_wlock()
+			a_downgrade_lock: Union[rwlock_async.LockableD, rwlock_async.Lockable] = c_rwlock_2.gen_wlock()
 			await a_downgrade_lock.acquire()
-			self.assertIsInstance(a_downgrade_lock, rwlock.LockableD)
+			self.assertIsInstance(a_downgrade_lock, rwlock_async.LockableD)
 			a_downgrade_lock = await a_downgrade_lock.downgrade()
 			# ## Assert
 			assert_internal_state()
@@ -628,8 +628,8 @@ class TestWhiteBoxRWLockReadD(unittest.TestCase):
 		# Then: The internal state should be the same.
 		"""
 		# ## Arrange
-		c_rwlock_1 = rwlock.RWLockFairD()
-		c_rwlock_2 = rwlock.RWLockFairD()
+		c_rwlock_1 = rwlock_async.RWLockFairD()
+		c_rwlock_2 = rwlock_async.RWLockFairD()
 		eloop = asyncio.get_event_loop()
 
 		def assert_internal_state():
@@ -646,9 +646,9 @@ class TestWhiteBoxRWLockReadD(unittest.TestCase):
 		async def try_lock():
 			a_read_lock = c_rwlock_1.gen_rlock()
 			await a_read_lock.acquire()
-			a_downgrade_lock: Union[rwlock.LockableD, rwlock.Lockable] = c_rwlock_2.gen_wlock()
+			a_downgrade_lock: Union[rwlock_async.LockableD, rwlock_async.Lockable] = c_rwlock_2.gen_wlock()
 			await a_downgrade_lock.acquire()
-			assert isinstance(a_downgrade_lock, rwlock.LockableD)
+			assert isinstance(a_downgrade_lock, rwlock_async.LockableD)
 			a_downgrade_lock = await a_downgrade_lock.downgrade()
 			# ## Assert
 			assert_internal_state()
