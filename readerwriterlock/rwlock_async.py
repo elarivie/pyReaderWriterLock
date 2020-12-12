@@ -524,7 +524,8 @@ class RWLockReadD(RWLockableD):
 			await wait_blocking.wait()  # Wait for the thread to be almost in its blocking state.
 			wait_blocking.clear()
 
-			await asyncio.sleep(sys.float_info.min * 123)  # Heuristic sleep delay to leave some extra time for the thread to block.
+			for _ in range(123):
+				await asyncio.sleep(sys.float_info.min)  # Heuristic sleep delay to leave some extra time for the thread to block.
 
 			await self.release()  # Open the gate! the current RW lock strategy gives priority to reader, therefore the result will acquire lock before any other writer lock.
 
