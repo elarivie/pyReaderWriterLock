@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## Added
+
+- rwlock_async (Thanks to Mike Merrill)
+- Support for python 3.9
+
+### Removed
+
+- Support for python 3.6
+
 ## [Released] - 1.0.7 2020-04-26
 
 ## Added

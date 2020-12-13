@@ -97,9 +97,9 @@ check.test.coverage.report: htmlcov	## Generate code coverage html report
 
 .PHONY: AUTHORS.md
 AUTHORS.md:
-	$(ECHO) "Author\n======\nÉric Larivière <ericlariviere@hotmail.com>\n\nContributors\n============\n\n**Thank you to every contributor**\n\n" > ./AUTHORS.md~
-	- $(GIT) log --raw | $(GREP) "^Author: " | $(GREP) -v ".noreply.github" | $(SORT) | $(UNIQ) -i | $(CUT) -d ' ' -f2- | $(SED) 's/^/- /' >> "./AUTHORS.md~"
-	$(MV) "./AUTHORS.md~" "./AUTHORS.md"
+	$(ECHO) "Author\n======\nÉric Larivière <ericlariviere@hotmail.com>\n\nContributors\n------------\n\n**Thank you to every contributor**\n\n" > $@~
+	- $(GIT) log --raw | $(GREP) "^Author: " | $(GREP) -v "elarivie@users.noreply.github.com" | $(GREP) -i -v "EricLariviere@hotmail.com" | $(SORT) | $(UNIQ) -i | $(CUT) -d ' ' -f2- | $(SED) 's/^/- /' >> "$@~"
+	$(MV) "$@~" "$@"
 	- $(GIT) add AUTHORS.md
 
 .PHONY: HEARTBEAT

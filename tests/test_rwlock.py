@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Unit tests."""
+"""Unit tests for rwlock."""
 
 import unittest
 import sys
@@ -30,7 +30,7 @@ class TestRWLock(unittest.TestCase):
 
 		# Then: the locks shall not deadlock.
 		"""
-		s_period_sec: int = 60
+		s_period_sec: int = 30
 		print(f"test_MultiThread {s_period_sec * len(self.c_rwlock_type)} sec…", flush=True)
 		exception_occured: bool = False
 		for c_curr_lock_type in self.c_rwlock_type:
@@ -44,7 +44,7 @@ class TestRWLock(unittest.TestCase):
 					if c_curr_lock_type not in self.c_rwlock_type_downgradable: return
 					try:
 						nonlocal v_value
-						c_enter_time = time.time()
+						c_enter_time: float = time.time()
 						while time.time() - c_enter_time <= s_period_sec:
 							c_lock_w1: Union[rwlock.Lockable, rwlock.LockableD] = c_curr_rw_lock.gen_wlock()
 							assert isinstance(c_lock_w1, rwlock.LockableD), type(c_lock_w1)
@@ -78,7 +78,7 @@ class TestRWLock(unittest.TestCase):
 					"""Writer using a no timeout blocking acquire strategy."""
 					try:
 						nonlocal v_value
-						c_enter_time = time.time()
+						c_enter_time: float = time.time()
 						c_lock_w1 = c_curr_rw_lock.gen_wlock()
 						while time.time() - c_enter_time <= s_period_sec:
 							time.sleep(sys.float_info.min)
@@ -96,7 +96,7 @@ class TestRWLock(unittest.TestCase):
 					"""Writer using a timeout blocking acquire strategy."""
 					try:
 						nonlocal v_value
-						c_enter_time = time.time()
+						c_enter_time: float = time.time()
 						c_lock_w1 = c_curr_rw_lock.gen_wlock()
 						while time.time() - c_enter_time <= s_period_sec:
 							time.sleep(sys.float_info.min)
@@ -120,7 +120,7 @@ class TestRWLock(unittest.TestCase):
 					"""Reader using a no timeout blocking acquire strategy."""
 					try:
 						nonlocal v_value
-						c_enter_time = time.time()
+						c_enter_time: float = time.time()
 						c_lock_r1 = c_curr_rw_lock.gen_rlock()
 						while time.time() - c_enter_time <= s_period_sec:
 							time.sleep(sys.float_info.min)

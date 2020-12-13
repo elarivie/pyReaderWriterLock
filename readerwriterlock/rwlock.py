@@ -76,19 +76,17 @@ class _ThreadSafeInt():
 
 	def __eq__(self, other) -> bool:
 		"""Self == other."""
-		return int(self) == other
+		return int(self) == int(other)
 
-	def __iadd__(self, other) -> "_ThreadSafeInt":
-		"""Self += other."""
+	def increment(self) -> None:
+		"""Increment value by one."""
 		with self.__value_lock:
-			self.__value += other
-		return self
+			self.__value += 1
 
-	def __isub__(self, other) -> "_ThreadSafeInt":
-		"""Self -= other."""
+	def decrement(self) -> None:
+		"""Decrement value by one."""
 		with self.__value_lock:
-			self.__value -= other
-		return self
+			self.__value -= 1
 
 
 @runtime_checkable
@@ -424,10 +422,10 @@ class RWLockReadD(RWLockableD):
 			c_deadline: Optional[float] = None if p_timeout is None else (self.c_rw_lock.c_time_source() + p_timeout)
 			if not self.c_rw_lock.c_lock_read_count.acquire(blocking=True, timeout=-1 if c_deadline is None else max(0, c_deadline - self.c_rw_lock.c_time_source())):
 				return False
-			self.c_rw_lock.v_read_count += 1
+			self.c_rw_lock.v_read_count.increment()
 			if 1 == int(self.c_rw_lock.v_read_count):
 				if not self.c_rw_lock.c_resource.acquire(blocking=True, timeout=-1 if c_deadline is None else max(0, c_deadline - self.c_rw_lock.c_time_source())):
-					self.c_rw_lock.v_read_count -= 1
+					self.c_rw_lock.v_read_count.decrement()
 					self.c_rw_lock.c_lock_read_count.release()
 					return False
 			self.c_rw_lock.c_lock_read_count.release()
@@ -439,7 +437,7 @@ class RWLockReadD(RWLockableD):
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.v_locked = False
 			self.c_rw_lock.c_lock_read_count.acquire()
-			self.c_rw_lock.v_read_count -= 1
+			self.c_rw_lock.v_read_count.decrement()
 			if 0 == int(self.c_rw_lock.v_read_count):
 				self.c_rw_lock.c_resource.release()
 			self.c_rw_lock.c_lock_read_count.release()
@@ -538,12 +536,12 @@ class RWLockWriteD(RWLockableD):
 				self.c_rw_lock.c_lock_read_try.release()
 				self.c_rw_lock.c_lock_read_entry.release()
 				return False
-			self.c_rw_lock.v_read_count += 1
+			self.c_rw_lock.v_read_count.increment()
 			if 1 == self.c_rw_lock.v_read_count:
 				if not self.c_rw_lock.c_resource.acquire(blocking=True, timeout=-1 if c_deadline is None else max(0, c_deadline - self.c_rw_lock.c_time_source())):
 					self.c_rw_lock.c_lock_read_try.release()
 					self.c_rw_lock.c_lock_read_entry.release()
-					self.c_rw_lock.v_read_count -= 1
+					self.c_rw_lock.v_read_count.decrement()
 					self.c_rw_lock.c_lock_read_count.release()
 					return False
 			self.c_rw_lock.c_lock_read_count.release()
@@ -557,7 +555,7 @@ class RWLockWriteD(RWLockableD):
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 			self.v_locked = False
 			self.c_rw_lock.c_lock_read_count.acquire()
-			self.c_rw_lock.v_read_count -= 1
+			self.c_rw_lock.v_read_count.decrement()
 			if 0 == self.c_rw_lock.v_read_count:
 				self.c_rw_lock.c_resource.release()
 			self.c_rw_lock.c_lock_read_count.release()
@@ -598,7 +596,7 @@ class RWLockWriteD(RWLockableD):
 		def downgrade(self) -> Lockable:
 			"""Downgrade."""
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
-			self.c_rw_lock.v_read_count += 1
+			self.c_rw_lock.v_read_count.increment()
 
 			self.v_locked = False
 			self.c_rw_lock.c_lock_write_count.acquire()

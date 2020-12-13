@@ -10,14 +10,15 @@ import time
 from typing import Callable
 from typing import Optional
 from typing import Type
+from typing import Union
 from types import TracebackType
 from typing_extensions import Protocol
 from typing_extensions import runtime_checkable
 
 try:
 	from asyncio import create_task as run_task
-except ImportError:
-	from asyncio import ensure_future as run_task
+except ImportError:  # pragma: no cover
+	from asyncio import ensure_future as run_task  # type: ignore [misc]  # pragma: no cover
 
 try:
 	asyncio.Lock().release()
@@ -40,7 +41,7 @@ class Lockable(Protocol):
 		"""Release the lock."""
 		raise AssertionError("Should be overriden")  # Will be overriden.  # pragma: no cover
 
-	async def locked(self) -> bool:
+	def locked(self) -> bool:
 		"""Answer to 'is it currently locked?'."""
 		raise AssertionError("Should be overriden")  # Will be overriden.  # pragma: no cover
 
@@ -70,7 +71,7 @@ class _ThreadSafeInt():
 	Implements only the bare minimum features for the RWLock implementation's need.
 	"""
 
-	def __init__(self, initial_value: int, lock_factory: Callable[[], Lockable] = asyncio.Lock) -> None:
+	def __init__(self, initial_value: int, lock_factory: Union[Callable[[], Lockable], Type[asyncio.Lock]] = asyncio.Lock) -> None:
 		"""Init."""
 		self.__value_lock = lock_factory()
 		self.__value: int = initial_value
@@ -81,13 +82,15 @@ class _ThreadSafeInt():
 
 	def __eq__(self, other) -> bool:
 		"""Self == other."""
-		return int(self) == other
+		return int(self) == int(other)
 
 	async def increment(self):
+		"""Increment the value by one."""
 		async with self.__value_lock:
 			self.__value += 1
 
 	async def decrement(self):
+		"""Decrement the value by one."""
 		async with self.__value_lock:
 			self.__value -= 1
 
@@ -121,7 +124,7 @@ class RWLockableD(Protocol):
 class RWLockRead(RWLockable):
 	"""A Read/Write lock giving preference to Reader."""
 
-	def __init__(self, lock_factory: Callable[[], Lockable] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
+	def __init__(self, lock_factory: Union[Callable[[], Lockable], Type[asyncio.Lock]] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
 		"""Init."""
 		self.v_read_count: int = 0
 		self.c_time_source = time_source
@@ -183,7 +186,7 @@ class RWLockRead(RWLockable):
 				await asyncio.wait_for(self.c_rw_lock.c_resource.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
 				locked: bool = True
 			except asyncio.TimeoutError:
-				locked: bool = False
+				locked = False
 			self.v_locked = locked
 			return locked
 
@@ -197,11 +200,11 @@ class RWLockRead(RWLockable):
 			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
-	def gen_rlock(self) -> "RWLockRead._aReader":
+	async def gen_rlock(self) -> "RWLockRead._aReader":
 		"""Generate a reader lock."""
 		return RWLockRead._aReader(self)
 
-	def gen_wlock(self) -> "RWLockRead._aWriter":
+	async def gen_wlock(self) -> "RWLockRead._aWriter":
 		"""Generate a writer lock."""
 		return RWLockRead._aWriter(self)
 
@@ -209,7 +212,7 @@ class RWLockRead(RWLockable):
 class RWLockWrite(RWLockable):
 	"""A Read/Write lock giving preference to Writer."""
 
-	def __init__(self, lock_factory: Callable[[], Lockable] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
+	def __init__(self, lock_factory: Union[Callable[[], Lockable], Type[asyncio.Lock]] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
 		"""Init."""
 		self.v_read_count: int = 0
 		self.v_write_count: int = 0
@@ -326,11 +329,11 @@ class RWLockWrite(RWLockable):
 			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
-	def gen_rlock(self) -> "RWLockWrite._aReader":
+	async def gen_rlock(self) -> "RWLockWrite._aReader":
 		"""Generate a reader lock."""
 		return RWLockWrite._aReader(self)
 
-	def gen_wlock(self) -> "RWLockWrite._aWriter":
+	async def gen_wlock(self) -> "RWLockWrite._aWriter":
 		"""Generate a writer lock."""
 		return RWLockWrite._aWriter(self)
 
@@ -338,7 +341,7 @@ class RWLockWrite(RWLockable):
 class RWLockFair(RWLockable):
 	"""A Read/Write lock giving fairness to both Reader and Writer."""
 
-	def __init__(self, lock_factory: Callable[[], Lockable] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
+	def __init__(self, lock_factory: Union[Callable[[], Lockable], Type[asyncio.Lock]] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
 		"""Init."""
 		self.v_read_count: int = 0
 		self.c_time_source = time_source
@@ -427,11 +430,11 @@ class RWLockFair(RWLockable):
 			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
-	def gen_rlock(self) -> "RWLockFair._aReader":
+	async def gen_rlock(self) -> "RWLockFair._aReader":
 		"""Generate a reader lock."""
 		return RWLockFair._aReader(self)
 
-	def gen_wlock(self) -> "RWLockFair._aWriter":
+	async def gen_wlock(self) -> "RWLockFair._aWriter":
 		"""Generate a writer lock."""
 		return RWLockFair._aWriter(self)
 
@@ -439,7 +442,7 @@ class RWLockFair(RWLockable):
 class RWLockReadD(RWLockableD):
 	"""A Read/Write lock giving preference to Reader."""
 
-	def __init__(self, lock_factory: Callable[[], Lockable] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
+	def __init__(self, lock_factory: Union[Callable[[], Lockable], Type[asyncio.Lock]] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
 		"""Init."""
 		self.v_read_count: _ThreadSafeInt = _ThreadSafeInt(initial_value=0, lock_factory=lock_factory)
 		self.c_time_source = time_source
@@ -501,7 +504,7 @@ class RWLockReadD(RWLockableD):
 				await asyncio.wait_for(self.c_rw_lock.c_resource.acquire(), timeout=(None if c_deadline is None else max(sys.float_info.min, c_deadline - self.c_rw_lock.c_time_source())))
 				locked: bool = True
 			except asyncio.TimeoutError:
-				locked: bool = False
+				locked = False
 
 			self.v_locked = locked
 			return locked
@@ -510,7 +513,7 @@ class RWLockReadD(RWLockableD):
 			"""Downgrade."""
 			if not self.v_locked: raise RELEASE_ERR_CLS(RELEASE_ERR_MSG)
 
-			result = self.c_rw_lock.gen_rlock()
+			result = await self.c_rw_lock.gen_rlock()
 
 			wait_blocking = asyncio.Event()
 
@@ -542,11 +545,11 @@ class RWLockReadD(RWLockableD):
 			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
-	def gen_rlock(self) -> "RWLockReadD._aReader":
+	async def gen_rlock(self) -> "RWLockReadD._aReader":
 		"""Generate a reader lock."""
 		return RWLockReadD._aReader(self)
 
-	def gen_wlock(self) -> "RWLockReadD._aWriter":
+	async def gen_wlock(self) -> "RWLockReadD._aWriter":
 		"""Generate a writer lock."""
 		return RWLockReadD._aWriter(self)
 
@@ -554,7 +557,7 @@ class RWLockReadD(RWLockableD):
 class RWLockWriteD(RWLockableD):
 	"""A Read/Write lock giving preference to Writer."""
 
-	def __init__(self, lock_factory: Callable[[], Lockable] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
+	def __init__(self, lock_factory: Union[Callable[[], Lockable], Type[asyncio.Lock]] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
 		"""Init."""
 		self.v_read_count: _ThreadSafeInt = _ThreadSafeInt(lock_factory=lock_factory, initial_value=0)
 		self.v_write_count: int = 0
@@ -687,11 +690,11 @@ class RWLockWriteD(RWLockableD):
 			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
-	def gen_rlock(self) -> "RWLockWriteD._aReader":
+	async def gen_rlock(self) -> "RWLockWriteD._aReader":
 		"""Generate a reader lock."""
 		return RWLockWriteD._aReader(self)
 
-	def gen_wlock(self) -> "RWLockWriteD._aWriter":
+	async def gen_wlock(self) -> "RWLockWriteD._aWriter":
 		"""Generate a writer lock."""
 		return RWLockWriteD._aWriter(self)
 
@@ -699,7 +702,7 @@ class RWLockWriteD(RWLockableD):
 class RWLockFairD(RWLockableD):
 	"""A Read/Write lock giving fairness to both Reader and Writer."""
 
-	def __init__(self, lock_factory: Callable[[], Lockable] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
+	def __init__(self, lock_factory: Union[Callable[[], Lockable], Type[asyncio.Lock]] = asyncio.Lock, time_source: Callable[[], float] = time.perf_counter) -> None:
 		"""Init."""
 		self.v_read_count: int = 0
 		self.c_time_source = time_source
@@ -800,10 +803,10 @@ class RWLockFairD(RWLockableD):
 			"""Answer to 'is it currently locked?'."""
 			return self.v_locked
 
-	def gen_rlock(self) -> "RWLockFairD._aReader":
+	async def gen_rlock(self) -> "RWLockFairD._aReader":
 		"""Generate a reader lock."""
 		return RWLockFairD._aReader(self)
 
-	def gen_wlock(self) -> "RWLockFairD._aWriter":
+	async def gen_wlock(self) -> "RWLockFairD._aWriter":
 		"""Generate a writer lock."""
 		return RWLockFairD._aWriter(self)
