@@ -1,7 +1,7 @@
 Reader Writer Lock
 ==================
 
-**A python implementation of the three Reader-Writer problems.**
+**A python implementation of a solution for the three Reader-Writer problems.**
 
 [![repo status Active](https://www.repostatus.org/badges/latest/active.svg "repo status Active")](https://www.repostatus.org/#active)
 [![Build Status](https://travis-ci.org/elarivie/pyReaderWriterLock.svg?branch=master)](https://travis-ci.org/elarivie/pyReaderWriterLock)

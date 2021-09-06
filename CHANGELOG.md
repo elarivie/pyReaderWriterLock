@@ -6,9 +6,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [Released] - 1.0.9 2021-09-05
+
+### Fixed
+
+- Fix error *Protocols cannot be instantiated*, occurring with Python 3.9.7
+
 ## [Released] - 1.0.8 2021-01-27
 
-## Added
+### Added
 
 - rwlock_async (Thanks to Mike Merrill)
 - Support for python 3.9
@@ -19,7 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Released] - 1.0.7 2020-04-26
 
-## Added
+### Added
 
 - Code coverage badge to README.md using [codecov](https://codecov.io)
 - Download count related badges to README.md
@@ -40,12 +46,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Released] - 1.0.6 2020-01-14
 
-## Fixed
+### Fixed
 - Add missing runtime dependency 'typing_extensions' to setup.py
 
 ## [Released] - 1.0.5 2020-01-14
 
-## Fixed
+### Fixed
 - README.rst is now included in source tar
 
 ### Changed
@@ -53,7 +59,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Use mypy Prototype to define "Lockable"
 
 ## [Released] - 1.0.4 2019-06-29
-
 
 ### Removed
 - Python 3.4 from the list of supported python version

@@ -130,13 +130,11 @@ class RWLockRead(RWLockable):
 		self.c_time_source = time_source
 		self.c_resource = lock_factory()
 		self.c_lock_read_count = lock_factory()
-		super().__init__()
 
 	class _aReader(Lockable):
 		def __init__(self, p_RWLock: "RWLockRead") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked: bool = False
-			super().__init__()
 
 		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -176,7 +174,6 @@ class RWLockRead(RWLockable):
 		def __init__(self, p_RWLock: "RWLockRead") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked: bool = False
-			super().__init__()
 
 		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -222,13 +219,11 @@ class RWLockWrite(RWLockable):
 		self.c_lock_read_entry = lock_factory()
 		self.c_lock_read_try = lock_factory()
 		self.c_resource = lock_factory()
-		super().__init__()
 
 	class _aReader(Lockable):
 		def __init__(self, p_RWLock: "RWLockWrite") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked: bool = False
-			super().__init__()
 
 		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -283,7 +278,6 @@ class RWLockWrite(RWLockable):
 		def __init__(self, p_RWLock: "RWLockWrite") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked: bool = False
-			super().__init__()
 
 		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -348,13 +342,11 @@ class RWLockFair(RWLockable):
 		self.c_lock_read_count = lock_factory()
 		self.c_lock_read = lock_factory()
 		self.c_lock_write = lock_factory()
-		super().__init__()
 
 	class _aReader(Lockable):
 		def __init__(self, p_RWLock: "RWLockFair") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked: bool = False
-			super().__init__()
 
 		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -401,7 +393,6 @@ class RWLockFair(RWLockable):
 		def __init__(self, p_RWLock: "RWLockFair") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked: bool = False
-			super().__init__()
 
 		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -448,13 +439,11 @@ class RWLockReadD(RWLockableD):
 		self.c_time_source = time_source
 		self.c_resource = lock_factory()
 		self.c_lock_read_count = lock_factory()
-		super().__init__()
 
 	class _aReader(Lockable):
 		def __init__(self, p_RWLock: "RWLockReadD") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked: bool = False
-			super().__init__()
 
 		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -494,7 +483,6 @@ class RWLockReadD(RWLockableD):
 		def __init__(self, p_RWLock: "RWLockReadD") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked: bool = False
-			super().__init__()
 
 		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -567,13 +555,11 @@ class RWLockWriteD(RWLockableD):
 		self.c_lock_read_entry = lock_factory()
 		self.c_lock_read_try = lock_factory()
 		self.c_resource = lock_factory()
-		super().__init__()
 
 	class _aReader(Lockable):
 		def __init__(self, p_RWLock: "RWLockWriteD") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked: bool = False
-			super().__init__()
 
 		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -628,7 +614,6 @@ class RWLockWriteD(RWLockableD):
 		def __init__(self, p_RWLock: "RWLockWriteD") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked: bool = False
-			super().__init__()
 
 		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -709,13 +694,11 @@ class RWLockFairD(RWLockableD):
 		self.c_lock_read_count = lock_factory()
 		self.c_lock_read = lock_factory()
 		self.c_lock_write = lock_factory()
-		super().__init__()
 
 	class _aReader(Lockable):
 		def __init__(self, p_RWLock: "RWLockFairD") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked: bool = False
-			super().__init__()
 
 		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
@@ -762,7 +745,6 @@ class RWLockFairD(RWLockableD):
 		def __init__(self, p_RWLock: "RWLockFairD") -> None:
 			self.c_rw_lock = p_RWLock
 			self.v_locked: bool = False
-			super().__init__()
 
 		async def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
