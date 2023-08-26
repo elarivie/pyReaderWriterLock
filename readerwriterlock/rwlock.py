@@ -7,6 +7,7 @@ import threading
 import sys
 import time
 
+from typing import Any
 from typing import Callable
 from typing import Optional
 from typing import Type
@@ -14,8 +15,12 @@ from types import TracebackType
 from typing_extensions import Protocol
 from typing_extensions import runtime_checkable
 
+RELEASE_ERR_MSG: str
+RELEASE_ERR_CLS: type
+
 try:
 	threading.Lock().release()
+	raise AssertionError()  # pragma: no cover
 except BaseException as exc:
 	RELEASE_ERR_CLS = type(exc)  # pylint: disable=invalid-name
 	RELEASE_ERR_MSG = str(exc)
@@ -74,7 +79,7 @@ class _ThreadSafeInt():
 		"""Get int value."""
 		return self.__value
 
-	def __eq__(self, other) -> bool:
+	def __eq__(self, other: Any) -> bool:
 		"""Self == other."""
 		return int(self) == int(other)
 

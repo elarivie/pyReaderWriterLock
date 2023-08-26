@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 
+from typing import Any
 from typing import List
 from typing import Union
 
@@ -490,6 +491,7 @@ class TestRWLockSpecificCase(unittest.TestCase):
 				assert isinstance(current_rw_lock, rwlock.RWLockableD)
 				current_lock: Union[rwlock.LockableD] = current_rw_lock.gen_wlock()
 
+				err: Any
 				with self.assertRaises(rwlock.RELEASE_ERR_CLS) as err:
 					current_lock.release()
 				self.assertEqual(str(err.exception), str(rwlock.RELEASE_ERR_MSG))
@@ -518,7 +520,7 @@ class TestWhiteBoxRWLockReadD(unittest.TestCase):
 		c_rwlock_1 = rwlock.RWLockReadD()
 		c_rwlock_2 = rwlock.RWLockReadD()
 
-		def assert_internal_state():
+		def assert_internal_state() -> None:
 			self.assertEqual(int(c_rwlock_1.v_read_count), int(c_rwlock_2.v_read_count))
 			self.assertEqual(bool(c_rwlock_1.c_resource.locked()), bool(c_rwlock_2.c_resource.locked()))
 			self.assertEqual(bool(c_rwlock_1.c_lock_read_count.locked()), bool(c_rwlock_2.c_lock_read_count.locked()))
@@ -551,7 +553,7 @@ class TestWhiteBoxRWLockReadD(unittest.TestCase):
 		c_rwlock_1 = rwlock.RWLockWriteD()
 		c_rwlock_2 = rwlock.RWLockWriteD()
 
-		def assert_internal_state():
+		def assert_internal_state() -> None:
 			self.assertEqual(int(c_rwlock_1.v_read_count), int(c_rwlock_2.v_read_count))
 			self.assertEqual(int(c_rwlock_1.v_write_count), int(c_rwlock_2.v_write_count))
 			self.assertEqual(bool(c_rwlock_1.c_lock_read_count.locked()), bool(c_rwlock_2.c_lock_read_count.locked()))
@@ -590,7 +592,7 @@ class TestWhiteBoxRWLockReadD(unittest.TestCase):
 		c_rwlock_1 = rwlock.RWLockFairD()
 		c_rwlock_2 = rwlock.RWLockFairD()
 
-		def assert_internal_state():
+		def assert_internal_state() -> None:
 			"""Assert internal."""
 			self.assertEqual(int(c_rwlock_1.v_read_count), int(c_rwlock_2.v_read_count))
 			self.assertEqual(bool(c_rwlock_1.c_lock_read_count.locked()), bool(c_rwlock_2.c_lock_read_count.locked()))
