@@ -48,12 +48,19 @@ SRC_FILES = $(shell $(FIND) ./ -path ./build -prune -o -type f -name '*.py' -pri
 .PHONY: all
 all: check.lint check.test.coverage.report check.test.coverage	## Build the project
 
+.PHONY: check
+check: check.lint check.test	## Check all the link and test
+
 .PHONY: check.lint.dist
 check.lint.dist: dist	## Lint distribution files
 	$(PYTHON) "-m" "twine" check dist/*
 
 .PHONY: check.lint
-check.lint: check.lint.dist check.lint.flake8 check.lint.mypy check.lint.pydocstyle check.lint.pylint	## Lint with all lint tool
+check.lint: check.lint.dist check.lint.flake8 check.lint.mypy check.lint.pydocstyle check.lint.pylint check.lint.pyrefly	## Lint with all lint tool
+
+.PHONY: check.lint.pyrefly
+check.lint.pyrefly:	## Lint with pyrefly
+	$(PYTHON) "-m" "pyrefly" "check"
 
 .PHONY: check.lint.flake8
 check.lint.flake8:	## Lint with flake8
@@ -61,7 +68,8 @@ check.lint.flake8:	## Lint with flake8
 
 .PHONY: check.lint.mypy
 check.lint.mypy:	## Lint with mypy
-	$(PYTHON) "-m" "mypy" "--config-file" "setup.cfg" "--show-column-numbers" "--show-error-context" "--show-error-codes" "--pretty" $(SRC_FILES)
+	$(RM_RF) .mypy_cache/;\
+	$(PYTHON) "-m" "mypy" "--config-file" "setup.cfg" "--show-column-numbers" "--show-error-context" "--show-error-codes" "--pretty" $(SRC_FILES);
 
 .PHONY: check.lint.pydocstyle
 check.lint.pydocstyle:	## Lint with pydocstyle

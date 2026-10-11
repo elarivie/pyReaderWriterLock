@@ -1,0 +1,6 @@
+project-includes = [
+    "readerwriterlock/**/*.py",
+    "tests/**/*.py",
+]
+
+min-severity = "warn"

@@ -2,6 +2,7 @@ flake8
 mypy
 pydocstyle
 pylint
+pyrefly
 setuptools
 twine
 typing_extensions

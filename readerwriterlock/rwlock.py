@@ -34,22 +34,22 @@ class Lockable(Protocol):
 
 	def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 		"""Acquire a lock."""
-		raise AssertionError("Should be overriden")  # Will be overriden.  # pragma: no cover
+		raise AssertionError("Should be overridden")  # Will be overridden.  # pragma: no cover
 
 	def release(self) -> None:
 		"""Release the lock."""
-		raise AssertionError("Should be overriden")  # Will be overriden.  # pragma: no cover
+		raise AssertionError("Should be overridden")  # Will be overridden.  # pragma: no cover
 
 	def locked(self) -> bool:
 		"""Answer to 'is it currently locked?'."""
-		raise AssertionError("Should be overriden")  # Will be overriden.  # pragma: no cover
+		raise AssertionError("Should be overridden")  # Will be overridden.  # pragma: no cover
 
 	def __enter__(self) -> bool:
 		"""Enter context manager."""
 		self.acquire()
 		return False
 
-	def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[Exception], exc_tb: Optional[TracebackType]) -> Optional[bool]:  # type: ignore
+	def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType], /, ) -> Optional[bool]:  # type: ignore[exit-return]
 		"""Exit context manager."""
 		self.release()
 		return False
@@ -61,7 +61,7 @@ class LockableD(Lockable, Protocol):
 
 	def downgrade(self) -> Lockable:
 		"""Downgrade."""
-		raise AssertionError("Should be overriden")  # Will be overriden.  # pragma: no cover
+		raise AssertionError("Should be overridden")  # Will be overridden.  # pragma: no cover
 
 
 class _ThreadSafeInt():
@@ -100,11 +100,11 @@ class RWLockable(Protocol):
 
 	def gen_rlock(self) -> Lockable:
 		"""Generate a reader lock."""
-		raise AssertionError("Should be overriden")  # Will be overriden.  # pragma: no cover
+		raise AssertionError("Should be overridden")  # Will be overridden.  # pragma: no cover
 
 	def gen_wlock(self) -> Lockable:
 		"""Generate a writer lock."""
-		raise AssertionError("Should be overriden")  # Will be overriden.  # pragma: no cover
+		raise AssertionError("Should be overridden")  # Will be overridden.  # pragma: no cover
 
 
 @runtime_checkable
@@ -113,11 +113,11 @@ class RWLockableD(Protocol):
 
 	def gen_rlock(self) -> Lockable:
 		"""Generate a reader lock."""
-		raise AssertionError("Should be overriden")  # Will be overriden.  # pragma: no cover
+		raise AssertionError("Should be overridden")  # Will be overridden.  # pragma: no cover
 
 	def gen_wlock(self) -> LockableD:
 		"""Generate a writer lock."""
-		raise AssertionError("Should be overriden")  # Will be overriden.  # pragma: no cover
+		raise AssertionError("Should be overridden")  # Will be overridden.  # pragma: no cover
 
 
 class RWLockRead(RWLockable):

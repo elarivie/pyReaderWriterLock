@@ -36,15 +36,15 @@ class TestRWLock(unittest.TestCase):
 		exception_occured: bool = False
 		for c_curr_lock_type in self.c_rwlock_type:
 			with self.subTest(c_curr_lock_type):
-				print(f"    {c_curr_lock_type} …", end="", flush=True)
+				print(f"    {c_curr_lock_type} …\b", end="", flush=True)
 				c_curr_rw_lock: Union[rwlock.RWLockable, rwlock.RWLockableD] = c_curr_lock_type()
 				v_value: int = 0
 
 				def downgrader1() -> None:
 					"""Downgrader using a timeout blocking acquire strategy."""
+					nonlocal v_value
 					if c_curr_lock_type not in self.c_rwlock_type_downgradable: return
 					try:
-						nonlocal v_value
 						c_enter_time: float = time.time()
 						while time.time() - c_enter_time <= s_period_sec:
 							c_lock_w1: Union[rwlock.Lockable, rwlock.LockableD] = c_curr_rw_lock.gen_wlock()
@@ -84,7 +84,7 @@ class TestRWLock(unittest.TestCase):
 						while time.time() - c_enter_time <= s_period_sec:
 							time.sleep(sys.float_info.min)
 							with c_lock_w1:
-								v_temp = v_value
+								v_temp: int = v_value
 								v_value += 1
 								self.assertEqual(v_value, v_temp + 1)
 								time.sleep(sys.float_info.min)
@@ -105,7 +105,7 @@ class TestRWLock(unittest.TestCase):
 							try:
 								locked = c_lock_w1.acquire(blocking=True, timeout=sys.float_info.min)
 								if locked:
-									v_temp = v_value
+									v_temp: int = v_value
 									v_value += 1
 									self.assertEqual(v_value, (v_temp + 1))
 									time.sleep(sys.float_info.min)
@@ -120,7 +120,6 @@ class TestRWLock(unittest.TestCase):
 				def reader1() -> None:
 					"""Reader using a no timeout blocking acquire strategy."""
 					try:
-						nonlocal v_value
 						c_enter_time: float = time.time()
 						c_lock_r1 = c_curr_rw_lock.gen_rlock()
 						while time.time() - c_enter_time <= s_period_sec:
@@ -137,7 +136,6 @@ class TestRWLock(unittest.TestCase):
 				def reader2() -> None:
 					"""Reader using a timeout blocking acquire strategy."""
 					try:
-						nonlocal v_value
 						c_enter_time = time.time()
 						c_lock_r2 = c_curr_rw_lock.gen_rlock()
 						while time.time() - c_enter_time <= s_period_sec:
@@ -494,7 +492,7 @@ class TestRWLockSpecificCase(unittest.TestCase):
 				err: Any
 				with self.assertRaises(rwlock.RELEASE_ERR_CLS) as err:
 					current_lock.release()
-				self.assertEqual(str(err.exception), str(rwlock.RELEASE_ERR_MSG))
+				self.assertEqual(str(err.exception), rwlock.RELEASE_ERR_MSG)
 
 				with self.assertRaises(rwlock.RELEASE_ERR_CLS):
 					# ## Assume
@@ -522,8 +520,8 @@ class TestWhiteBoxRWLockReadD(unittest.TestCase):
 
 		def assert_internal_state() -> None:
 			self.assertEqual(int(c_rwlock_1.v_read_count), int(c_rwlock_2.v_read_count))
-			self.assertEqual(bool(c_rwlock_1.c_resource.locked()), bool(c_rwlock_2.c_resource.locked()))
-			self.assertEqual(bool(c_rwlock_1.c_lock_read_count.locked()), bool(c_rwlock_2.c_lock_read_count.locked()))
+			self.assertEqual(c_rwlock_1.c_resource.locked(), c_rwlock_2.c_resource.locked())
+			self.assertEqual(c_rwlock_1.c_lock_read_count.locked(), c_rwlock_2.c_lock_read_count.locked())
 		# ## Assume
 		assert_internal_state()
 
@@ -554,14 +552,14 @@ class TestWhiteBoxRWLockReadD(unittest.TestCase):
 		c_rwlock_2 = rwlock.RWLockWriteD()
 
 		def assert_internal_state() -> None:
-			self.assertEqual(int(c_rwlock_1.v_read_count), int(c_rwlock_2.v_read_count))
-			self.assertEqual(int(c_rwlock_1.v_write_count), int(c_rwlock_2.v_write_count))
-			self.assertEqual(bool(c_rwlock_1.c_lock_read_count.locked()), bool(c_rwlock_2.c_lock_read_count.locked()))
-			self.assertEqual(bool(c_rwlock_1.c_lock_write_count.locked()), bool(c_rwlock_2.c_lock_write_count.locked()))
+			self.assertEqual(c_rwlock_1.v_read_count, c_rwlock_2.v_read_count)
+			self.assertEqual(c_rwlock_1.v_write_count, c_rwlock_2.v_write_count)
+			self.assertEqual(c_rwlock_1.c_lock_read_count.locked(), c_rwlock_2.c_lock_read_count.locked())
+			self.assertEqual(c_rwlock_1.c_lock_write_count.locked(), c_rwlock_2.c_lock_write_count.locked())
 
-			self.assertEqual(bool(c_rwlock_1.c_lock_read_entry.locked()), bool(c_rwlock_2.c_lock_read_entry.locked()))
-			self.assertEqual(bool(c_rwlock_1.c_lock_read_try.locked()), bool(c_rwlock_2.c_lock_read_try.locked()))
-			self.assertEqual(bool(c_rwlock_1.c_resource.locked()), bool(c_rwlock_2.c_resource.locked()))
+			self.assertEqual(c_rwlock_1.c_lock_read_entry.locked(), c_rwlock_2.c_lock_read_entry.locked())
+			self.assertEqual(c_rwlock_1.c_lock_read_try.locked(), c_rwlock_2.c_lock_read_try.locked())
+			self.assertEqual(c_rwlock_1.c_resource.locked(), c_rwlock_2.c_resource.locked())
 
 		# ## Assume
 		assert_internal_state()
@@ -594,10 +592,10 @@ class TestWhiteBoxRWLockReadD(unittest.TestCase):
 
 		def assert_internal_state() -> None:
 			"""Assert internal."""
-			self.assertEqual(int(c_rwlock_1.v_read_count), int(c_rwlock_2.v_read_count))
-			self.assertEqual(bool(c_rwlock_1.c_lock_read_count.locked()), bool(c_rwlock_2.c_lock_read_count.locked()))
-			self.assertEqual(bool(c_rwlock_1.c_lock_read.locked()), bool(c_rwlock_2.c_lock_read.locked()))
-			self.assertEqual(bool(c_rwlock_1.c_lock_write.locked()), bool(c_rwlock_2.c_lock_write.locked()))
+			self.assertEqual(c_rwlock_1.v_read_count, c_rwlock_2.v_read_count)
+			self.assertEqual(c_rwlock_1.c_lock_read_count.locked(), c_rwlock_2.c_lock_read_count.locked())
+			self.assertEqual(c_rwlock_1.c_lock_read.locked(), c_rwlock_2.c_lock_read.locked())
+			self.assertEqual(c_rwlock_1.c_lock_write.locked(), c_rwlock_2.c_lock_write.locked())
 
 		# ## Assume
 		assert_internal_state()
