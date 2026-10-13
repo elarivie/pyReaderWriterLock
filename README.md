@@ -4,14 +4,12 @@ Reader Writer Lock
 **A python implementation of a solution for the three Reader-Writer problems.**
 
 [![repo status Active](https://www.repostatus.org/badges/latest/active.svg "repo status Active")](https://www.repostatus.org/#active)
-[![Build Status](https://travis-ci.org/elarivie/pyReaderWriterLock.svg?branch=master)](https://travis-ci.org/elarivie/pyReaderWriterLock)
 [![Coverage Status](https://codecov.io/gh/elarivie/pyreaderwriterlock/branch/master/graph/badge.svg)](https://codecov.io/gh/elarivie/pyreaderwriterlock)
 [![BugTracker](https://img.shields.io/github/issues/elarivie/pyReaderWriterLock.svg)][pyReaderWriterLock_BugTracker]
 
 
-[![Python Version](https://img.shields.io/pypi/pyversions/readerwriterlock.svg)][python]
-[![Pypi Version](https://img.shields.io/pypi/v/readerwriterlock.svg)][pyReaderWriterLock_Pypi]
-
+[![Python Version](https://img.shields.io/pypi/pyversions/readerwriterlock)][python]
+[![Pypi Version](https://img.shields.io/pypi/v/readerwriterlock)][pyReaderWriterLock_Pypi]
 [![Code size in bytes](https://img.shields.io/github/languages/code-size/elarivie/pyReaderWriterLock.svg)][pyReaderWriterLock_repo]
 [![License](https://img.shields.io/pypi/l/readerwriterlock.svg)][pyReaderWriterLock_License]
 
