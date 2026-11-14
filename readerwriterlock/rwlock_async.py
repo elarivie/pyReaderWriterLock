@@ -188,7 +188,8 @@ class RWLockRead(RWLockable):
 				locked: bool = True
 			except asyncio.TimeoutError:
 				locked = False
-			self.v_locked = locked
+			if locked:
+				self.v_locked = True
 			return locked
 
 		async def release(self) -> None:
@@ -498,7 +499,8 @@ class RWLockReadD(RWLockableD):
 			except asyncio.TimeoutError:
 				locked = False
 
-			self.v_locked = locked
+			if locked:
+				self.v_locked = True
 			return locked
 
 		async def downgrade(self) -> Lockable:
