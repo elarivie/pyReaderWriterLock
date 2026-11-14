@@ -23,6 +23,51 @@ class TestRWLock_Async(unittest.TestCase):
 		self.c_rwlock_type_downgradable = (rwlock_async.RWLockReadD, rwlock_async.RWLockWriteD, rwlock_async.RWLockFairD)
 		self.c_rwlock_type = (rwlock_async.RWLockRead, rwlock_async.RWLockWrite, rwlock_async.RWLockFair) + self.c_rwlock_type_downgradable
 
+	def test_failed_writer_reacquire_preserves_held_lock(self) -> None:
+		"""A failed acquire must not forget an existing successful acquire."""
+		async def run_test() -> None:
+			for lock_type in self.c_rwlock_type:
+				for blocking, timeout in ((False, -1), (True, 0), (True, 0.001)):
+					with self.subTest(lock_type=lock_type, blocking=blocking, timeout=timeout):
+						shared = lock_type()
+						writer = await shared.gen_wlock()
+						self.assertTrue(await writer.acquire())
+						self.assertFalse(await writer.acquire(blocking=blocking, timeout=timeout))
+						self.assertTrue(writer.locked())
+						self.assertFalse(await (await shared.gen_rlock()).acquire(blocking=False))
+						self.assertFalse(await (await shared.gen_wlock()).acquire(blocking=False))
+						await writer.release()
+						self.assertFalse(writer.locked())
+						reader = await shared.gen_rlock()
+						self.assertTrue(await reader.acquire(blocking=False))
+						await reader.release()
+						next_writer = await shared.gen_wlock()
+						self.assertTrue(await next_writer.acquire(blocking=False))
+						await next_writer.release()
+		asyncio.run(run_test())
+
+	def test_failed_writer_reacquire_preserves_downgrade(self) -> None:
+		"""A held writer remains downgradable after a failed acquire."""
+		async def run_test() -> None:
+			for lock_type in self.c_rwlock_type_downgradable:
+				with self.subTest(lock_type=lock_type):
+					shared = lock_type()
+					writer = await shared.gen_wlock()
+					self.assertTrue(await writer.acquire())
+					self.assertFalse(await writer.acquire(blocking=False))
+					reader = await writer.downgrade()
+					self.assertFalse(writer.locked())
+					self.assertTrue(reader.locked())
+					self.assertFalse(await (await shared.gen_wlock()).acquire(blocking=False))
+					peer_reader = await shared.gen_rlock()
+					self.assertTrue(await peer_reader.acquire(blocking=False))
+					await peer_reader.release()
+					await reader.release()
+					next_writer = await shared.gen_wlock()
+					self.assertTrue(await next_writer.acquire(blocking=False))
+					await next_writer.release()
+		asyncio.run(run_test())
+
 	def test_multi_async(self) -> None:
 		"""
 		# Given: Bunch of reader & writer lock generated from a RW lock.
