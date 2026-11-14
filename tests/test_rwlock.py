@@ -23,6 +23,47 @@ class TestRWLock(unittest.TestCase):
 		self.c_rwlock_type_downgradable = (rwlock.RWLockReadD, rwlock.RWLockWriteD, rwlock.RWLockFairD)
 		self.c_rwlock_type = (rwlock.RWLockRead, rwlock.RWLockWrite, rwlock.RWLockFair) + self.c_rwlock_type_downgradable
 
+	def test_failed_writer_reacquire_preserves_held_lock(self) -> None:
+		"""A failed acquire must not forget an existing successful acquire."""
+		for lock_type in self.c_rwlock_type:
+			for blocking, timeout in ((False, -1), (True, 0), (True, 0.001)):
+				with self.subTest(lock_type=lock_type, blocking=blocking, timeout=timeout):
+					shared = lock_type()
+					writer = shared.gen_wlock()
+					self.assertTrue(writer.acquire())
+					self.assertFalse(writer.acquire(blocking=blocking, timeout=timeout))
+					self.assertTrue(writer.locked())
+					self.assertFalse(shared.gen_rlock().acquire(blocking=False))
+					self.assertFalse(shared.gen_wlock().acquire(blocking=False))
+					writer.release()
+					self.assertFalse(writer.locked())
+					reader = shared.gen_rlock()
+					self.assertTrue(reader.acquire(blocking=False))
+					reader.release()
+					next_writer = shared.gen_wlock()
+					self.assertTrue(next_writer.acquire(blocking=False))
+					next_writer.release()
+
+	def test_failed_writer_reacquire_preserves_downgrade(self) -> None:
+		"""A held writer remains downgradable after a failed acquire."""
+		for lock_type in self.c_rwlock_type_downgradable:
+			with self.subTest(lock_type=lock_type):
+				shared = lock_type()
+				writer = shared.gen_wlock()
+				self.assertTrue(writer.acquire())
+				self.assertFalse(writer.acquire(blocking=False))
+				reader = writer.downgrade()
+				self.assertFalse(writer.locked())
+				self.assertTrue(reader.locked())
+				self.assertFalse(shared.gen_wlock().acquire(blocking=False))
+				peer_reader = shared.gen_rlock()
+				self.assertTrue(peer_reader.acquire(blocking=False))
+				peer_reader.release()
+				reader.release()
+				next_writer = shared.gen_wlock()
+				self.assertTrue(next_writer.acquire(blocking=False))
+				next_writer.release()
+
 	def test_multi_thread(self) -> None:
 		"""
 		# Given: Bunch of reader & writer lock generated from a RW lock.

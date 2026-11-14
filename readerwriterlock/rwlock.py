@@ -173,7 +173,8 @@ class RWLockRead(RWLockable):
 		def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
 			locked: bool = self.c_rw_lock.c_resource.acquire(blocking, timeout)
-			self.v_locked = locked
+			if locked:
+				self.v_locked = True
 			return locked
 
 		def release(self) -> None:
@@ -448,7 +449,8 @@ class RWLockReadD(RWLockableD):
 		def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
 			"""Acquire a lock."""
 			locked: bool = self.c_rw_lock.c_resource.acquire(blocking, timeout)
-			self.v_locked = locked
+			if locked:
+				self.v_locked = True
 			return locked
 
 		def downgrade(self) -> Lockable:
